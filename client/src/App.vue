@@ -14,25 +14,11 @@ export default {
 #app .content {
   user-select: none;
   caret-color: transparent; 
-  background-color: rgba(180, 168, 136, 0.288);
   height: 100vh;
-  display: flex; /* Activează Flexbox pentru centrare */
-  flex-direction: column; /* Aranjează conținutul pe verticală */
-  align-items: center; /* Centrează pe orizontală */
-  justify-content: center; 
+  display: flex; /* Activează Flexbox pentru rând */
+  flex-direction: row; /* Aranjează elementele pe orizontală (rând) */
+  align-items: center; /* Centrează elementele pe verticală */
+  justify-content: center; /* Distribuie elementele la distanță egală pe rând */
 }
 
-.card{
-  width: 350px;
-  height: 350px;
-  border-radius: 20px;
-}
-
-.card:hover{
-  transform: scale(1.1);
-}
-
-.card .card-title{
-  font-family: 'Poppins';
-}
 </style>
