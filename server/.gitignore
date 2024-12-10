@@ -38,4 +38,5 @@ Thumbs.db
 .git/
 
 #
+server/database/digital-journal-26df0-firebase-adminsdk-yuu40-36f52841f7.json
 server/database/*.json

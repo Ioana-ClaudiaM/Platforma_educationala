@@ -2,20 +2,18 @@ const express = require('express');
 require('dotenv').config();
 const morgan = require('morgan');
 const cors = require('cors');
-const admin = require('firebase-admin');
-const serviceAccount = require('C:/Users/mierl/OneDrive/Desktop/Digital journal/server/database/digital-journal-project-firebase-adminsdk-ijk5i-14ccf04b02.json'); 
+const db = require('./database/dbInit');
 
 const app = express();
-const PORT = process.env.PORT || 8080;
+app.use(express.json());
 
-admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-  });
+const userRouter = require('./userManagement/userRouter');
 
-const db = admin.firestore();
+const PORT = process.env.PORT || 8000;
   
 app.use(morgan(':method :url :status '));
 app.use(cors());
+app.use(userRouter);
 
 app.get('/' , (req,res) => {
     res.set('Content-Type', 'text/html');

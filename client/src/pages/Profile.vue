@@ -42,7 +42,9 @@ export default {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  background-color: #ffe6e6;
+  background-image: url('../assets/40.jpg');
+  background-size: cover;
+  background-position: center;
 }
 
 .profile h1 {

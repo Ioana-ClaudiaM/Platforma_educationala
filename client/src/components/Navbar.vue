@@ -19,12 +19,16 @@
         <div class="container-img">
             <img src="../assets/shopping-cart.png" alt="None">
         </div>
+        <router-link to="/login">
         <div class="container-img">
             <img src="../assets/login.png" alt="None">
         </div>
+        </router-link>
+        <router-link to="/signup">
         <div class="container-img">
             <img src="../assets/signup.png" alt="None">
         </div>
+        </router-link>
         <router-link to="/profile">
             <div class="container-img">
                 <img src="../assets/user.png" alt="None">
