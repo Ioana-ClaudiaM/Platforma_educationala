@@ -2,7 +2,9 @@ import { createRouter, createWebHistory } from 'vue-router';
 import Profile from '../pages/Profile.vue';
 import SignUp from '@/pages/SignUp.vue';
 import Login from '@/pages/Login.vue';
-
+import { authGuard } from '@/middleware/authGuard';
+import Education
+ from '@/pages/Education.vue';
 const routes = [
   // {
   //   path: '/',
@@ -12,7 +14,8 @@ const routes = [
   {
     path: '/profile',
     name: 'Profile',
-    component: Profile
+    component: Profile,
+    beforeEnter:authGuard,
   },
   {
     path: '/signup',
@@ -23,6 +26,11 @@ const routes = [
     path: '/login',
     name: 'Login',
     component: Login
+  },
+  {
+    path: '/education',
+    name: 'Education',
+    component: Education
   },
 ];
 
