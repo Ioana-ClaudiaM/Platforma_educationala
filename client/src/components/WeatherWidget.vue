@@ -19,8 +19,8 @@ export default {
   data() {
     return {
       weatherData: null,
-      city: "Bucharest", // Poți seta orașul sau îl poți determina din locația utilizatorului
-      apiKey: "170841e7645eb895f0e5b8cd1f3ffc32", // Înlocuiește cu API key-ul tău de la OpenWeatherMap
+      city: "Bucharest", 
+      apiKey: "170841e7645eb895f0e5b8cd1f3ffc32", 
     };
   },
   mounted() {
@@ -54,7 +54,7 @@ export default {
           return weatherIcons[key];
         }
       }
-      return "🌈"; // Default emoji if no match
+      return "🌈"; 
     },
   },
 };

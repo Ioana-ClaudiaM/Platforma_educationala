@@ -2,7 +2,6 @@ import axios from 'axios';
 
 export function authGuard(to, from, next) {
    const token = localStorage.getItem('user_token');
-  console.log("Token din localStorage:", token);  
   if (!token) {
     next('/login');
     return;

@@ -1,6 +1,6 @@
 <template>
   <div class="profile">
-    <h1>Bine ai venit, user! </h1>
+    <h1>Bine ai venit, {{ username }}!</h1>
     <div class="content">
       <Navbar />
       <div class="cards">
@@ -22,6 +22,7 @@ import CardDiet from '@/components/Card-Diet.vue';
 import CardBudget from '@/components/Card-Budget.vue';
 import CardShopping from '@/components/Card-Shopping.vue';
 import HomepageBar from '@/components/Homepage-Bar.vue';
+import { mapGetters } from 'vuex';
 
 export default {
   name: "Profile-User",
@@ -32,7 +33,10 @@ export default {
     CardBudget,
     CardShopping,
     HomepageBar
-  }
+  },
+  computed: {
+    ...mapGetters('user', ['username', 'isLoggedIn']),
+  },
 };
 </script>
 
@@ -42,9 +46,6 @@ export default {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  /* background-image: url('../assets/40.jpg');
-  background-size: cover;
-  background-position: center; */
   background: linear-gradient(135deg, #f5f7fa 0%, #b0c4e4 100%);
 }
 

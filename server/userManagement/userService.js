@@ -37,6 +37,10 @@ const generateToken = (user) => {
   const loginUser = async (req, res) => {
     const { email, password } = req.body;
   
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email și parolă sunt necesare' });
+    }
+    
     try {
       const userSnapshot = await db.collection('users')
         .where('email', '==', email)
@@ -56,13 +60,11 @@ const generateToken = (user) => {
       }
   
       const token = generateToken(user);
-  
-      const { password: _, ...userResponse } = user;
-  
+    
       res.status(200).json({
         message: 'Autentificare reușită',
         token,
-        user: userResponse
+        user: { id: user.id, username: user.username, email: user.email }
       });
   
     } catch (error) {

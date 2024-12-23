@@ -3,7 +3,8 @@
         <div class="shopping-wrapper">
             <div class="shopping-header">
                 <h2 class="card-title">
-                    🛒 Lista de Cumpărături</h2>
+                    🛒 Lista de Cumpărături
+                </h2>
             </div>
             <div class="items-list-container">
                 <transition-group name="item-list" tag="ul" class="items-list">
@@ -12,7 +13,6 @@
                             <span class="item-name">{{ item.name }}</span>
                             <div class="item-actions">
                                 <span class="item-price">{{ item.price.toFixed(2) }} RON</span>
-
                             </div>
                         </div>
                     </li>
@@ -30,27 +30,26 @@
 </template>
 
 <script>
+import { ref, computed } from 'vue';
+
 export default {
-    data() {
+    setup() {
+        const items = ref([
+            { id: 1, name: "Mere proaspete", price: 10 },
+            { id: 2, name: "Lapte integral", price: 7 },
+            { id: 3, name: "Pâine integrală", price: 5 },
+            { id: 4, name: "Salată verde", price: 3 },
+            { id: 5, name: "Piept de pui", price: 25 }
+        ]);
+        
+        const totalCost = computed(() => {
+            return items.value.reduce((total, item) => total + item.price, 0);
+        });
+
         return {
-            items: [
-                { id: 1, name: "Mere proaspete", price: 10 },
-                { id: 2, name: "Lapte integral", price: 7 },
-                { id: 3, name: "Pâine integrală", price: 5 },
-                { id: 4, name: "Salată verde", price: 3 },
-                { id: 5, name: "Piept de pui", price: 25 },
-            ],
-            newItemName: '',
-            newItemPrice: null,
-            nextId: 6
+            items,
+            totalCost
         };
-    },
-    computed: {
-        totalCost() {
-            return this.items.reduce((total, item) => total + item.price, 0);
-        }
-    },
-    methods: {
     }
 };
 </script>

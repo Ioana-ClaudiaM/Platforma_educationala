@@ -66,138 +66,146 @@
 </template>
 
 <script>
+import { ref, computed } from 'vue';
+import { useToast } from 'vue-toastification';
+import { useRouter } from 'vue-router';
 import axios from 'axios';
 
 export default {
   name: 'SignupForm',
-  data() {
-    return {
-      username: '',
-      email: '',
-      password: '',
-      confirmPassword: '',
-      usernameError: '',
-      emailError: '',
-      passwordError: '',
-      confirmPasswordError: '',
-      isFormValid: false,
-      isSubmitting: false, 
-    }
-  },
-  methods: {
-    validateUsername() {
-      if (!this.username) {
-        this.usernameError = 'Numele de utilizator este obligatoriu'
-        this.isFormValid = false
-        return false
-      } else if (this.username.length < 3) {
-        this.usernameError = 'Numele de utilizator trebuie să aibă minimum 3 caractere'
-        this.isFormValid = false
-        return false
-      } else if (!/^[a-zA-Z0-9_]+$/.test(this.username)) {
-        this.usernameError = 'Numele de utilizator poate conține doar litere, cifre și under score'
-        this.isFormValid = false
-        return false
-      } else {
-        this.usernameError = ''
-        this.checkFormValidity()
-        return true
-      }
-    },
-    
-    validateEmail() {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-      if (!this.email) {
-        this.emailError = 'Email-ul este obligatoriu'
-        this.isFormValid = false
-        return false
-      } else if (!emailRegex.test(this.email)) {
-        this.emailError = 'Introdu o adresă de email validă'
-        this.isFormValid = false
-        return false
-      } else {
-        this.emailError = ''
-        this.checkFormValidity()
-        return true
-      }
-    },
-    
-    validatePassword() {
-      if (!this.password) {
-        this.passwordError = 'Parola este obligatorie'
-        this.isFormValid = false
-        return false
-      } else if (this.password.length < 8) {
-        this.passwordError = 'Parola trebuie să aibă minimum 8 caractere'
-        this.isFormValid = false
-        return false
-      } else if (!/(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])/.test(this.password)) {
-        this.passwordError = 'Parola trebuie să conțină literă mare, literă mică, cifră și un caracter special'
-        this.isFormValid = false
-        return false
-      } else {
-        this.passwordError = ''
-        this.checkFormValidity()
-        return true
-      }
-    },
-    
-    validateConfirmPassword() {
-      if (!this.confirmPassword) {
-        this.confirmPasswordError = 'Confirmă parola'
-        this.isFormValid = false
-        return false
-      } else if (this.password !== this.confirmPassword) {
-        this.confirmPasswordError = 'Parolele nu se potrivesc'
-        this.isFormValid = false
-        return false
-      } else {
-        this.confirmPasswordError = ''
-        this.checkFormValidity()
-        return true
-      }
-    },
-    
-    checkFormValidity() {
-  const isUsernameValid = this.username && !this.usernameError;
-  const isEmailValid = this.email && !this.emailError;
-  const isPasswordValid = this.password && !this.passwordError;
-  const isConfirmPasswordValid = this.confirmPassword && !this.confirmPasswordError;
+  setup() {
+    const router =useRouter();
+    const toast = useToast();
+    const username = ref('');
+    const email = ref('');
+    const password = ref('');
+    const confirmPassword = ref('');
+    const isSubmitting = ref(false);
+    const usernameError = ref('');
+    const emailError = ref('');
+    const passwordError = ref('');
+    const confirmPasswordError = ref('');
+    const isFormValid = computed(() => {
+      return (
+        !usernameError.value && !emailError.value && 
+        !passwordError.value && !confirmPasswordError.value &&
+        username.value && email.value && password.value && confirmPassword.value
+      );
+    });
 
-  this.isFormValid = 
-    isUsernameValid && 
-    isEmailValid && 
-    isPasswordValid && 
-    isConfirmPasswordValid;
+    const validateUsername = () => {
+      if (!username.value) {
+        usernameError.value = 'Numele de utilizator este obligatoriu';
+        toast.error("Numele de utilizator este obligatoriu!");
+        return false;
+      } else if (username.value.length < 3) {
+        usernameError.value = 'Numele de utilizator trebuie să aibă minimum 3 caractere';
+        toast.warning("Numele de utilizator trebuie să aibă minimum 3 caractere");
+        return false;
+      } else if (!/^[a-zA-Z0-9_]+$/.test(username.value)) {
+        usernameError.value = 'Numele de utilizator poate conține doar litere, cifre și under score';
+        toast.warning("Numele de utilizator poate conține doar litere, cifre și under score");
+        return false;
+      } else {
+        usernameError.value = '';
+        return true;
+      }
+    };
 
-  return this.isFormValid;
-}
-,
-    
-submitForm() {
-      if (this.checkFormValidity() && !this.isSubmitting) {
-        this.isSubmitting = true;
+    const validateEmail = () => {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!email.value) {
+        emailError.value = 'Email-ul este obligatoriu';
+        toast.error("Email-ul este obligatoriu!");
+        return false;
+      } else if (!emailRegex.test(email.value)) {
+        emailError.value = 'Introdu o adresă de email validă';
+        toast.warning("Adresa de email nu este validă!");
+        return false;
+      } else {
+        emailError.value = '';
+        return true;
+      }
+    };
+
+    const validatePassword = () => {
+      if (!password.value) {
+        passwordError.value = 'Parola este obligatorie';
+        toast.error("Parola este obligatorie!");
+        return false;
+      } else if (password.value.length < 8) {
+        passwordError.value = 'Parola trebuie să aibă minimum 8 caractere';
+        toast.warning("Parola trebuie să aibă minimum 8 caractere");
+        return false;
+      } else if (!/(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])/.test(password.value)) {
+        passwordError.value = 'Parola trebuie să conțină literă mare, literă mică, cifră și un caracter special';
+        toast.warning("Parola trebuie să conțină literă mare, literă mică, cifră și un caracter special");
+        return false;
+      } else {
+        passwordError.value = '';
+        return true;
+      }
+    };
+
+    const validateConfirmPassword = () => {
+      if (!confirmPassword.value) {
+        confirmPasswordError.value = 'Confirmă parola';
+        return false;
+      } else if (password.value !== confirmPassword.value) {
+        confirmPasswordError.value = 'Parolele nu se potrivesc';
+        return false;
+      } else {
+        confirmPasswordError.value = '';
+        return true;
+      }
+    };
+
+    const submitForm = () => {
+      if (isFormValid.value && !isSubmitting.value) {
+        isSubmitting.value = true;
 
         const formData = {
-          username: this.username,
-          email: this.email,
-          password: this.password
+          username: username.value,
+          email: email.value,
+          password: password.value,
         };
+
         axios.post('http://localhost:8000/register', formData)
-          .then(response => {
-            console.log('Contul a fost creat cu succes', response.data);
-            this.$router.push('/login');
+          .then(() => {
+            toast.success("Contul a fost creat cu succes!", {
+              timeout: 2000,
+              onClose: () => router.push('/login')
+            });
           })
           .catch(error => {
-            console.error('Eroare la crearea contului:', error);
-            this.isSubmitting = false;
+            toast.error(error || 'Eroare la crearea contului');
+            isSubmitting.value = false;
           });
       }
-    }
-  }
-}
-</script>
+      else{
+        toast.info("Te rugăm să completezi toate câmpurile corect!");
+      }
+    };
 
+    return {
+      username,
+      email,
+      password,
+      confirmPassword,
+      isFormValid,
+      usernameError,
+      emailError,
+      passwordError,
+      confirmPasswordError,
+      validateUsername,
+      validateEmail,
+      validatePassword,
+      validateConfirmPassword,
+      submitForm,
+    };
+  }
+};
+</script>
 <style scoped>
 * {
   margin: 0;

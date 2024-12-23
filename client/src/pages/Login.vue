@@ -4,27 +4,22 @@
       <div class="login-image"></div>
       <form class="login-form" @submit.prevent="submitForm">
         <h2>Autentificare</h2>
-
         <div class="form-group">
           <label for="email">Email</label>
           <input type="email" id="email" v-model="email" @blur="validateEmail" required>
           <span class="error-message">{{ emailError }}</span>
         </div>
-
         <div class="form-group">
           <label for="password">Parolă</label>
           <input type="password" id="password" v-model="password" @blur="validatePassword" required>
           <span class="error-message">{{ passwordError }}</span>
         </div>
-
         <div class="forgot-password">
           <a href="/recover-password">Ai uitat parola?</a>
         </div>
-
         <div class="button-link">
           <button type="submit" :disabled="!isFormValid" class="submit-btn">Intră în cont</button>
         </div>
-
         <div class="signup-link">
           Nu ai un cont? <a href="/signup">Creează cont</a>
         </div>
@@ -34,103 +29,116 @@
 </template>
 
 <script>
+import { ref, computed } from 'vue';
+import { useStore } from 'vuex'; 
+import { useRouter } from 'vue-router';
+import { useToast } from 'vue-toastification';
 import axios from 'axios';
 
 export default {
   name: 'LoginForm',
-  data() {
-    return {
-      email: '',
-      password: '',
-      emailError: '',
-      passwordError: '',
-      isFormValid: false,
-      isSubmitting: false,
-    }
-  },
-  methods: {
-    validateEmail() {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-      if (!this.email) {
-        this.emailError = 'Email-ul este obligatoriu'
-        this.isFormValid = false
-        return false
-      } else if (!emailRegex.test(this.email)) {
-        this.emailError = 'Introdu o adresă de email validă'
-        this.isFormValid = false
-        return false
+  setup() {
+    const store = useStore();
+    const router =useRouter();
+    const toast = useToast();
+    const email = ref('');
+    const password = ref('');
+    const emailError = ref('');
+    const passwordError = ref('');
+    const isFormValid = computed(() => email.value && password.value && !emailError.value && !passwordError.value);
+    const isSubmitting = ref(false);
+    const loginError = ref('');
+
+   
+    const validateEmail = () => {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!email.value) {
+        emailError.value = 'Email-ul este obligatoriu';
+        toast.error("Email-ul este obligatoriu!");
+        return false;
+      } else if (!emailRegex.test(email.value)) {
+        emailError.value = 'Introdu o adresă de email validă';
+        toast.warning("Adresa de email nu este validă!");
+        return false;
       } else {
-        this.emailError = ''
-        this.checkFormValidity()
-        return true
+        emailError.value = '';
+        return true;
       }
-    },
+    };
 
-    validatePassword() {
-      if (!this.password) {
-        this.passwordError = 'Parola este obligatorie'
-        this.isFormValid = false
-        return false
-      } else if (this.password.length < 8) {
-        this.passwordError = 'Parola trebuie să aibă minimum 8 caractere'
-        this.isFormValid = false
-        return false
+    const validatePassword = () => {
+      if (!password.value) {
+        passwordError.value = 'Parola este obligatorie';
+        toast.error("Parola este obligatorie!");
+        return false;
+      } else if (password.value.length < 8) {
+        passwordError.value = 'Parola trebuie să aibă minimum 8 caractere';
+        toast.warning("Parola trebuie să aibă minimum 8 caractere!");
+        return false;
       } else {
-        this.passwordError = ''
-        this.checkFormValidity()
-        return true
+        passwordError.value = '';
+        return true;
       }
-    },
+    };
 
-    checkFormValidity() {
-      const isEmailValid = this.email && !this.emailError
-      const isPasswordValid = this.password && !this.passwordError
+    const submitForm = () => {
+      loginError.value = '';
 
-      this.isFormValid = isEmailValid && isPasswordValid
-
-      return this.isFormValid
-    },
-
-    submitForm() {
-      this.loginError = ''
-
-      if (this.checkFormValidity() && !this.isSubmitting) {
-        this.isSubmitting = true;
+      if (isFormValid.value && !isSubmitting.value) {
+        isSubmitting.value = true;
 
         const formData = {
-          email: this.email,
-          password: this.password
+          email: email.value,
+          password: password.value,
         };
 
         axios.post('http://localhost:8000/login', formData)
           .then(response => {
             localStorage.setItem('user_token', response.data.token);
-
             localStorage.setItem('user_info', JSON.stringify(response.data.user));
-
             axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
-
-            this.$router.push('/profile');
+            store.dispatch('user/setUser', response.data.user);
+            toast.success("Autentificare reușită! Bine ai venit!", {
+              timeout: 2000,
+              onClose: () => router.push('/profile')
+            });
           })
           .catch(error => {
             if (error.response) {
-              this.loginError = error.response.data.message || 'Eroare la autentificare';
+              loginError.value = error.response.data.message || 'Eroare la autentificare';
+              toast.error(error.response.data.message || 'Eroare la autentificare');
             } else if (error.request) {
-              this.loginError = 'Nu s-a putut stabili conexiunea cu serverul';
+              loginError.value = 'Nu s-a putut stabili conexiunea cu serverul';
+              toast.error('Nu s-a putut stabili conexiunea cu serverul');
             } else {
-              this.loginError = 'A apărut o eroare neașteptată';
+              loginError.value = 'A apărut o eroare neașteptată';
+              toast.error('A apărut o eroare neașteptată');
             }
             console.error('Eroare la logarea in cont:', error);
           })
           .finally(() => {
-            this.isSubmitting = false;
+            isSubmitting.value = false;
           });
+      } else {
+        toast.info("Te rugăm să completezi toate câmpurile corect!");
       }
-    }
+    };
 
-
+    return {
+      email,
+      password,
+      emailError,
+      passwordError,
+      isFormValid,
+      isSubmitting,
+      loginError,
+      validateEmail,
+      validatePassword,
+      submitForm
+    };
   }
-}
+};
+
 </script>
 
 <style scoped>

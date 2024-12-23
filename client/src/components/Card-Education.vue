@@ -2,44 +2,73 @@
   <div class="card card-education">
     <div class="education-header">
       <h2 class="card-title">
-        📘 Educație 
+        📘 Educație
       </h2>
     </div>
     <ul class="tasks-list">
-      <li v-for="(task, index) in todaysTasks" :key="index">
-        <strong>📘 {{ task.type }}:</strong> {{ task.description }} <span class="time">({{ task.time }})</span>
+      <li v-for="task in educationalTasks" :key="task.id" 
+          :class="getStatusClass(task.status)">
+        <div class="task-content">
+          <strong>📘 {{ task.title }}</strong>
+          <p>{{ task.description }}</p>
+          <div class="task-meta">
+            <span class="due-date">Scadent: {{ formatDate(task.dueDate) }}</span>
+            <span class="status">{{ getStatusText(task.status) }}</span>
+          </div>
+        </div>
       </li>
     </ul>
-    <p v-if="todaysTasks.length === 0">✨ Astăzi este o zi liberă! Bucură-te de timpul tău. 🎉</p>
+    <p v-if="educationalTasks.length === 0" class="no-tasks-message">
+      ✨ Nu există task-uri educaționale momentan! 🎉
+    </p>
   </div>
 </template>
 
 <script>
-export default {
-  data() {
-    return {
-      todaysTasks: [],
-    };
-  },
-  mounted() {
-    this.fetchTodaysTasks(); 
-  },
-  methods: {
-    fetchTodaysTasks() {
-      const tasks = [
-        { type: "Temă", description: "Rezolvă exerciții la matematică", time: "10:00 - 11:00", date: "02.12.2024" },
-        { type: "Meeting", description: "Discuție cu mentorul", time: "14:00 - 14:30", date: "02.12.2024" },
-        { type: "Task", description: "Scrie un eseu la literatură", time: "16:00 - 18:00", date: "02.12.2024" },
-        { type: "Curs", description: "Urmărește cursul de fizică", time: "18:00 - 19:00", date: "02.12.2024" },
-        { type: "Examen", description: "Pregătire examen", time: "20:00 - 22:00", date: "02.12.2024" },
-        { type: "Activitate extra", description: "Meditații la engleză", time: "22:30 - 23:00", date: "02.12.2024" },
-        { type: "Temă", description: "Exerciții la chimie", time: "09:00 - 10:00", date: "02.12.2024" },
-        { type: "Meeting", description: "Proiect de grup", time: "12:00 - 13:00", date: "02.12.2024" },
-      ];
+import { computed, onMounted } from 'vue';
+import { useStore } from 'vuex';
 
-      const today = new Date().toLocaleDateString("ro-RO");
-      this.todaysTasks = tasks.filter(task => task.date === today);
-    },
+export default {
+  name: 'EducationCard',
+  setup() {
+    const store = useStore();
+
+    const educationalTasks = computed(() => store.getters['tasks/educationalTasks']);
+
+    onMounted(() => {
+      const userId = store.getters['user/userId'];
+      if (userId) {
+        store.dispatch('tasks/fetchTasks', userId);
+      }
+    });
+
+    const formatDate = (date) => {
+      return new Date(date).toLocaleDateString('ro-RO');
+    };
+
+    const getStatusClass = (status) => {
+      return {
+        'status-pending': status === 'Pending',
+        'status-in-progress': status === 'In Progress',
+        'status-completed': status === 'Completed'
+      };
+    };
+
+    const getStatusText = (status) => {
+      const statusMap = {
+        'Pending': 'În așteptare',
+        'In Progress': 'În desfășurare',
+        'Completed': 'Finalizat'
+      };
+      return statusMap[status] || status;
+    };
+
+    return {
+      educationalTasks,
+      formatDate,
+      getStatusClass,
+      getStatusText,
+    };
   },
 };
 </script>
@@ -47,51 +76,85 @@ export default {
 <style scoped>
 .card-education {
   background-color: #FFE1CB;
-  border:10px solid #f5c9aa;
-
+  border: 10px solid #f5c9aa;
+  padding: 20px;
+  border-radius: 12px;
 }
 
 .education-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-.education-icon {
-  margin-right: 12px;
-  font-size: 1.6rem;
+  margin-bottom: 20px;
 }
 
 .tasks-list {
   list-style-type: none;
   padding: 0;
   margin-top: 20px;
-  max-height: 200px;
+  max-height: 300px;
   overflow-y: auto;
-  border: 1px solid #ddd;
   border-radius: 8px;
 }
 
-
 .tasks-list li {
-  font-family: 'Sour Gummy';
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   color: #3a3939;
-  margin-bottom: 10px;
-  padding: 10px;
+  margin-bottom: 12px;
+  padding: 5px;
   background: #fff;
   border-radius: 8px;
   box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.1);
-}
-
-.tasks-list li .time {
-  font-size: 14px;
-  color: #898787;
-  margin-left: 5px;
+  transition: transform 0.2s ease;
 }
 
 .tasks-list li:hover {
   transform: scale(1.02);
-  transition: 0.2s;
+}
+
+.task-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.task-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 8px;
+}
+
+.status-pending {
+  border-left: 4px solid #ffd700;
+}
+
+.status-in-progress {
+  border-left: 4px solid #4a90e2;
+}
+
+.status-completed {
+  border-left: 4px solid #2ecc71;
+}
+
+.no-tasks-message {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+  font-style: italic;
+}
+
+.due-date {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.status {
+  padding: 4px 8px;
+  border-radius: 4px;
+  background-color: #f0f0f0;
+  font-weight: 500;
 }
 </style>

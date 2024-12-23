@@ -8,12 +8,21 @@ const app = express();
 app.use(express.json());
 
 const userRouter = require('./userManagement/userRouter');
-
+const timetableRouter = require('./timetableManagement/timetableRouter');
+const gradesRouter = require('./gradesManagement/gradesRouter');
+const studyResourcesRouter = require('./studyResourcesManagement/studyResourcesRouter');
+const eventsRouter=require('./eventsManagement/eventsRouter');
+const tasksRouter = require('./tasksManagement/tasksRouter');
 const PORT = process.env.PORT || 8000;
   
 app.use(morgan(':method :url :status '));
 app.use(cors());
 app.use(userRouter);
+app.use(timetableRouter);
+app.use(gradesRouter);
+app.use(studyResourcesRouter);
+app.use(eventsRouter);
+app.use(tasksRouter);
 
 app.get('/' , (req,res) => {
     res.set('Content-Type', 'text/html');
