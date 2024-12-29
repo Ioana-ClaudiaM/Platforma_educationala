@@ -3,10 +3,11 @@ const admin = require('firebase-admin');
 
 const saveEvent = async (req, res) => {
     const { userId, event } = req.body;
-    console.log(event);
-    console.log('Event ID:', event.id);
-    console.log('User ID:', userId);
 
+    if (!userId) {
+        return res.status(400).json({ message: 'User ID is required' });
+      }
+      
     try {
         await db.collection('users').doc(userId).collection('events').doc(event.id.toString()).set({
             ...event,

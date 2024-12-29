@@ -1,75 +1,159 @@
 <template>
-    <div class="navbar">
-        <router-link to="/">
-            <div class="container-img">
-                <img src="../assets/house.png" alt="Home">
+    <nav class="navbar-wrapper">
+        <div class="navbar">
+            <router-link to="/" class="nav-item">
+                <div class="container-img">
+                    <img src="../assets/house.png" alt="Home">
+                    <span class="nav-label">Acasă</span>
+                </div>
+            </router-link>
+            <router-link to="/education" class="nav-item">
+                <div class="container-img">
+                    <img src="../assets/education.png" alt="Education">
+                    <span class="nav-label">Pagina de studiu</span>
+                </div>
+            </router-link>
+            <router-link to="/profile" class="nav-item">
+                <div class="container-img">
+                    <img src="../assets/user.png" alt="Profile">
+                    <span class="nav-label">Profil</span>
+                </div>
+            </router-link>
+            <div class="nav-item" style="cursor: pointer" @click="handleLogout">
+                <div class="container-img">
+                    <img src="../assets/logout.png" alt="Logout">
+                    <span class="nav-label">LogOut</span>
+                </div>
             </div>
-        </router-link>
-        <router-link to="/education">
-            <div class="container-img">
-                <img src="../assets/education.png" alt="None">
-            </div>
-        </router-link>
-        <div class="container-img">
-            <img src="../assets/diet.png" alt="None">
         </div>
-        <div class="container-img">
-            <img src="../assets/budget.png" alt="None">
-        </div>
-        <div class="container-img">
-            <img src="../assets/shopping-cart.png" alt="None">
-        </div>
-        <router-link to="/login">
-        <div class="container-img">
-            <img src="../assets/login.png" alt="None">
-        </div>
-        </router-link>
-        <router-link to="/signup">
-        <div class="container-img">
-            <img src="../assets/signup.png" alt="None">
-        </div>
-        </router-link>
-        <router-link to="/profile">
-            <div class="container-img">
-                <img src="../assets/user.png" alt="None">
-            </div>
-        </router-link>
-    </div>
+    </nav>
 </template>
 
-
 <script>
+import { computed } from 'vue';
+import { useStore } from 'vuex';
+import { useToast } from 'vue-toastification';
+import { useRouter } from 'vue-router';
+
 export default {
-    name: "Navbar-App"
+    name: 'NavbarApp',
+    setup() {
+        const store = useStore();
+        const toast = useToast();
+        const router = useRouter();
+
+        const isLoggedIn = computed(() => store.getters['user/isLoggedIn']);
+
+        const handleLogout = async () => {
+            try {
+                await store.dispatch('user/logout');
+                toast.success('Ai fost deconectat cu succes!');
+                await router.push('/login');
+            } catch (error) {
+                console.error('Eroare la logout:', error);
+                toast.error('A apărut o eroare la deconectare');
+            }
+        };
+
+        return {
+            isLoggedIn,
+            handleLogout
+        };
+    }
 };
 </script>
 
 <style scoped>
-.navbar {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    border-radius: 20px;
-    padding: 20px;
-    top: 50%;
+.navbar-wrapper {
     position: fixed;
-    transform: translateY(-50%);
-    left: 30px;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.568));
+    backdrop-filter: blur(10px);
+    z-index: 1000;
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
 }
 
-.navbar img {
-    width: 40px;
-    height: 40px;
-    padding: 15px;
+.navbar {
+    margin: 0 auto;
+    display: flex;
+    justify-content: center;
+    gap: 6rem;
+}
+
+.nav-item {
+    text-decoration: none;
+    color: #333;
 }
 
 .container-img {
-    background-color: rgb(230, 207, 241);
-    border-radius: 40px;
-    border: 3px solid rgb(189, 154, 202);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.5rem;
+    border-radius: 12px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
 }
 
-.navbar img:hover {
+.container-img:hover {
+    transform: translateY(-2px);
+    background-color: rgba(245, 236, 250, 0.8);
+}
+
+.container-img::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 3px;
+    background: linear-gradient(to right, #9c27b0, #673ab7);
+    transition: width 0.3s ease;
+}
+
+.container-img:hover::after {
+    width: 100%;
+}
+
+.navbar img {
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0.5rem;
+    margin-bottom: 0.25rem;
+    transition: transform 0.3s ease;
+}
+
+.nav-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+}
+
+.container-img:hover .nav-label {
+    opacity: 1;
+}
+
+.container-img:hover img {
     transform: scale(1.1);
+}
+
+@media (max-width: 768px) {
+    .navbar {
+        gap: 1.5rem;
+        padding: 0.25rem 1rem;
+    }
+
+    .nav-label {
+        font-size: 0.75rem;
+    }
+
+    .navbar img {
+        width: 2rem;
+        height: 2rem;
+    }
 }
 </style>

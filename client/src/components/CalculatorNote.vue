@@ -36,15 +36,15 @@
                       <input type="number" v-model.number="component.grade" min="0" max="10" placeholder="Notă"
                         id="compoennt-grade" />
                     </div>
-                  </div>
-                  <button @click="removeComponent(index, 'seminar')" class="delete-component">
-                    <i class="fa-solid fa-trash"></i> ❌ Șterge
+                    <button @click="removeComponent(index, 'seminar')" class="delete-component">
+                    <i class="fa-solid fa-trash"></i>❌ Șterge
                   </button>
+                  </div>
                 </div>
               </div>
             </div>
             <button @click="addComponent('seminar')" class="add-component">
-              <i class="fa-solid fa-plus"></i> ➕ Adaugă o nouă componentă la seminar
+              <i class="fa-solid fa-plus"></i>➕ Adaugă o nouă componentă la seminar
             </button>
           </div>
 
@@ -74,10 +74,10 @@
 
         <div class="modal-actions">
           <button @click="saveSubjectGrades" class="save-grades">
-            <i class="fa-solid fa-save"></i> 💾 Salvează
+            <i class="fa-solid fa-save"></i>💾 Salvează
           </button>
           <button @click="closeEditModal" class="cancel-button">
-            <i class="fa-solid fa-times"></i> ❌ Închide
+            <i class="fa-solid fa-times"></i>❌ Închide
           </button>
         </div>
       </div>
@@ -97,7 +97,7 @@
           <tr v-for="(subject, index) in savedSubjects" :key="index">
             <td>{{ subject.name }}</td>
             <td>{{ subject.finalGrade.toFixed(2) }}</td>
-            <td>
+            <td class="actions">
               <button @click="updateSubjectGrades(subject)">
                 <i class="fa-solid fa-edit"></i> ✏️
               </button>
@@ -113,7 +113,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useStore } from 'vuex';
 import axios from 'axios';
 
@@ -174,24 +174,22 @@ export default {
       selectedSubject.value = '';
     };
 
-    const loadUniqueSubjects = async () => {
-      try {
-        const response = await axios.get(`http://localhost:8000/loadTimetable/${userId.value}`);
+    const schedule = computed(() => store.getters['timetable/schedule']);
 
+    watch(schedule, (newSchedule) => {
+      if (newSchedule) {
         const allSubjects = [];
-        Object.values(response.data.schedule).forEach(daySchedule => {
+        Object.values(newSchedule).forEach(daySchedule => {
           daySchedule.forEach(subject => {
             if (subject && !allSubjects.includes(subject)) {
               allSubjects.push(subject);
             }
           });
         });
-
         uniqueSubjects.value = allSubjects;
-      } catch (error) {
-        console.error("Eroare la încărcarea materiilor:", error);
       }
-    };
+    }, { immediate: true });
+
 
     const loadSubjectDetails = () => {
       seminarComponents.value = [{ name: '', weight: 0, grade: 0 }];
@@ -276,7 +274,6 @@ export default {
     };
 
     onMounted(async () => {
-      await loadUniqueSubjects();
       try {
         const response = await axios.get(`http://localhost:8000/loadSubjectGrades/${userId.value}`);
         savedSubjects.value = response.data.subjects || [];
@@ -310,22 +307,12 @@ export default {
 
 <style scoped>
 .grade-tracking-container {
-  max-width: 600px;
-  margin: 20px auto;
+  min-width: 600px;
+  margin: 0px auto;
   padding: 40px;
   background-color: #f9f1d0b6;
   border-radius: 12px;
   box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-  height: fit-content;
-}
-
-h2,
-h3 {
-  color: #7f73bf;
-  text-align: center;
-  font-size: 1.4rem;
-  margin-bottom: 20px;
-  font-family: "Sour Gummy", sans-serif;
 }
 
 .subject-selection {
@@ -352,10 +339,6 @@ h3 {
   box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.grade-input-section h3 {
-  font-size: 1rem;
-}
-
 .weights-container {
   display: flex;
   flex-direction: column;
@@ -372,13 +355,6 @@ h3 {
   flex-direction: column;
 }
 
-.weight-input label {
-  font-weight: bold;
-  display: block;
-  margin-bottom: 10px;
-  font-size: 1rem;
-}
-
 .seminar-components-wrapper {
   display: flex;
   flex-direction: column;
@@ -389,6 +365,7 @@ h3 {
 .seminar-component-row {
   display: flex;
   align-items: center;
+  flex-direction: row;
   gap: 10px;
   width: 100%;
 }
@@ -405,38 +382,6 @@ h3 {
   border: 1px solid #ddd;
   border-radius: 6px;
   font-size: 0.9rem;
-}
-
-.delete-component {
-  width: fit-content;
-  padding: 5px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-top: 25px;
-}
-
-.add-component {
-  margin: 10px auto;
-  width: fit-content;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 5px 10px;
-}
-
-button {
-  background-color: #d0cbec;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  font-family: "Sour Gummy", sans-serif;
-
-}
-
-button:hover {
-  background-color: #dbf2fc;
 }
 
 .calculation-result {
@@ -478,6 +423,13 @@ table td button {
   margin: 0 5px;
   padding: 5px 10px;
   font-size: 0.8rem;
+}
+
+.actions{
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  justify-content: center;
 }
 
 .subjects-overview table {
@@ -522,8 +474,4 @@ table td button {
   margin-top: 20px;
 }
 
-.modal-actions button {
-  padding: 10px 20px;
-  font-size: 1rem;
-}
 </style>

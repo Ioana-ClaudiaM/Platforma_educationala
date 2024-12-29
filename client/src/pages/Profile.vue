@@ -1,27 +1,20 @@
 <template>
   <div class="profile">
-    <h1>Bine ai venit, {{ username }}!</h1>
-    <div class="content">
-      <Navbar />
-      <div class="cards">
+    <Navbar class="navbar" />
+    <div class="main-content">
+      <h1>Bine ai venit, {{ username }}!</h1>
+      <div class="content">
+        <CardCalendar />
         <CardEducation />
-        <CardBudget />
-        <CardDiet />
-        <CardShopping />
-        <HomepageBar />
       </div>
     </div>
   </div>
-
 </template>
 
 <script>
 import Navbar from '@/components/Navbar.vue';
 import CardEducation from '@/components/Card-Education.vue';
-import CardDiet from '@/components/Card-Diet.vue';
-import CardBudget from '@/components/Card-Budget.vue';
-import CardShopping from '@/components/Card-Shopping.vue';
-import HomepageBar from '@/components/Homepage-Bar.vue';
+import CardCalendar from '@/components/CardCalendar.vue';
 import { mapGetters } from 'vuex';
 
 export default {
@@ -29,10 +22,7 @@ export default {
   components: {
     Navbar,
     CardEducation,
-    CardDiet,
-    CardBudget,
-    CardShopping,
-    HomepageBar
+    CardCalendar,
   },
   computed: {
     ...mapGetters('user', ['username', 'isLoggedIn']),
@@ -40,23 +30,33 @@ export default {
 };
 </script>
 
-<style>
+<style scoped>
 .profile {
+  width: 100%;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+}
+
+.main-content {
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  background: linear-gradient(135deg, #f5f7fa 0%, #b0c4e4 100%);
+  justify-content: center;
 }
 
 .profile h1 {
   font-family: 'Sour Gummy', sans-serif;
   text-align: center;
   font-weight: bold;
-  color: rgb(145, 202, 145);
   transition: transform 0.3s ease, color 0.3s ease;
-  -webkit-text-stroke-color: rgb(33, 122, 93);
-  -webkit-text-stroke-width: 0.5px;
+  margin-top: 100px;
+  font-size: 30px;
+  color: rgb(167, 154, 253);
+  background-color: #ffffffe9;
+  border-radius: 20px;
+  width: fit-content;
+  padding: 20px;
 }
 
 .profile h1:hover {
@@ -64,24 +64,13 @@ export default {
   color: rgb(86, 177, 212);
 }
 
-.cards {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 35px;
-  padding: 20px;
-  margin-top: -10px;
-  margin-right: 50px;
-}
-
-.card {
-  width: 350px;
-  height: 300px;
-  border-radius: 20px;
+.content {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  box-shadow: 5px 5px 8px rgb(147, 137, 137);
-  padding: 20px;
+  align-items: center;
+  gap: 20px;
+  margin-top: 20px;
+  width: 100%;
 }
 
 .card img {

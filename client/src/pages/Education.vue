@@ -1,111 +1,148 @@
 <template>
   <div class="education-page">
     <h1 class="page-title">Pagina de studiu</h1>
-    <div class="item timetable">
-      <Timetable />
+
+    <nav class="navigation">
+      <button 
+        v-for="item in menuItems" 
+        :key="item.id"
+        @click="setCurrentComponent(item.component)"
+        :class="['nav-button', { active: currentComponent === item.component }]"
+      >
+        {{ item.name }}
+      </button>
+    </nav>
+
+    <div class="content">
+      <component :is="currentComponent" />
     </div>
-    <div class="item calculator-note">
-      <CalculatorNote />
-    </div>
-    <div class="item library">
-      <Library />
-    </div>
-    <div class="item school-calendar">
-      <SchoolCalendar />
-    </div>
-    <div class="item task-manager">
-      <TaskManager />
-    </div>
+    <button @click="goToProfilePage()" class="goToProfile">Mergi pe pagina de profil</button>
   </div>
 </template>
 
 <script>
+import { ref } from 'vue';
 import CalculatorNote from '@/components/CalculatorNote.vue';
 import Library from '@/components/Library.vue';
 import SchoolCalendar from '@/components/SchoolCalendar.vue';
 import Timetable from '@/components/Timetable.vue';
 import TaskManager from '@/components/TaskManager.vue';
+import { useRouter } from 'vue-router';
 
 export default {
-  name: 'Education-Page',
+  name: 'EducationPage',
   components: {
     Timetable,
     CalculatorNote,
     SchoolCalendar,
     Library,
-    TaskManager
-  }
+    TaskManager,
+  },
+  setup() {
+    const currentComponent = ref('Timetable'); 
+    const router=useRouter();
+    const menuItems = [
+      { id: 1, name: 'Orar', component: 'Timetable' },
+      { id: 2, name: 'Bibliotecă', component: 'Library' },
+      { id: 3, name: 'Calendar', component: 'SchoolCalendar' },
+      { id: 4, name: 'Calculator Note', component: 'CalculatorNote' },
+      { id: 5, name: 'Manager Sarcini', component: 'TaskManager' },
+    ];
+
+    const setCurrentComponent = (component) => {
+      currentComponent.value = component; 
+    };
+
+    const goToProfilePage = () => {
+      router.push('/profile');
+    }
+
+    return {
+      currentComponent,
+      menuItems,
+      setCurrentComponent,
+      goToProfilePage
+    };
+  },
 };
 </script>
 
-<style scoped>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
 
+<style scoped>
 .education-page {
-  display: grid;
-  grid-template-areas:
-    "timetable library"
-    "calculator-note school-calendar";
-  gap: 50px;
-  background-image: url("../assets/SL-122720-39270-25.jpg");
+  background-image: url("../assets/4028065.jpg");
   background-position: center;
-  background-size: contain;
-  position: relative; 
-  padding: 70px;
+  background-size: cover;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  justify-content: center;
+  align-items: center;
 }
 
 .page-title {
-  position: absolute; 
-  top: 10px; 
-  left: 50%; 
-  transform: translateX(-50%); 
   color: #7f73bf;
-    font-size: 2.5em;
-    font-weight: 600;
-    letter-spacing: -0.5px;
-    font-family:"Sour Gummy";
-    background-color: #f9f1d0b6;  
-  width: fit-content; 
+  font-size: 2.5em;
+  font-weight: 600;
+  font-family: "Sour Gummy";
+  background-color: #ffffffe9;
   text-align: center;
-  z-index: 10; 
   border-radius: 20px;
   padding: 5px;
+  margin-bottom: 2rem;
 }
 
-.item {
+nav {
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
   justify-content: center;
+  max-width: 80%;
+  margin: 0 auto; 
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 20px;
+}
+.nav-button {
+  padding: 10px 20px;
+  background-color: #faebb1;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: "Sour Gummy";
+  transition: background-color 0.3s;
 }
 
-.timetable {
-  grid-column: 1 / 2;
-  grid-row: 1 / 2;
+.nav-button:hover {
+  background-color: #7f73bf;
+  color: white;
 }
 
-.library {
-  grid-column: 2 / 3;
-  grid-row: 1 / 2;
+.nav-button.active {
+  background-color: #7f73bf;
+  color: white;
 }
 
-.calculator-note {
-  grid-column: 1 / 2;
-  grid-row: 2 / 3;
+.content {
+  padding: 0;
+  flex: 1;
+  margin-top: 20px;
 }
 
-.school-calendar {
-  grid-column: 2 / 3;
-  grid-row: 2 / 3;
+.goToProfile{
+width: fit-content;
+font-size: 1.2rem;
+margin-top: 20px;
 }
 
-.task-manager {
-  grid-column: 1 / 3;  
-  grid-row: 3 / 4;    
-}
+@media (min-width: 1025px) {
+  .navigation {
+    gap: 20px;
+  }
 
+  .nav-button {
+    font-size: 1.1em;
+  }
+}
 </style>

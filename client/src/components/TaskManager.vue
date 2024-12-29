@@ -26,6 +26,14 @@
         </div>
       </div>
     </div>
+    <div v-else-if="selectedEventId && tasks.length === 0" class="no-tasks-message">
+      <div class="empty-state">
+        <span class="empty-icon">📝</span>
+        <h3>Nu există task-uri disponibile</h3>
+        <p>Apasă pe butonul "Adaugă Task Nou" pentru a începe.</p>
+      </div>
+    </div>
+     
     <div v-if="!selectedEventId" class="dashboard-view">
       <div class="stats-grid">
         <div class="stat-card">
@@ -240,15 +248,13 @@
 
 <script>
 import { ref, computed, onMounted, watch } from 'vue';
-import axios from 'axios';
+import { useStore } from 'vuex';
 import * as echarts from 'echarts';
 
 export default {
-  name: 'TaskManager',
+  name: 'Task-Manager',
   setup() {
-    const events = ref([]);
-    const tasks = ref([]);
-    const allTasks = ref([]);
+    const store = useStore();
     const selectedEventId = ref("");
     const isAddModalOpen = ref(false);
     const isViewAllModalOpen = ref(false);
@@ -272,8 +278,12 @@ export default {
       priority: 'Medium'
     });
 
+    const events = computed(() => store.getters['events/allEvents']);
+    const tasks = computed(() => store.getters['tasks/eventTasks']);
+    const allTasks = computed(() => store.getters['tasks/allTasks']);
+
     const completedTasksCount = computed(() =>
-      allTasks.value.filter(task => task.status === 'Completed').length,
+      allTasks.value.filter(task => task.status === 'Completed').length
     );
 
     const inProgressTasksCount = computed(() =>
@@ -293,6 +303,8 @@ export default {
         .slice(0, 5);
     });
 
+    const previewTasks = computed(() => tasks.value.slice(0, 3));
+
     const initializeCharts = () => {
       if (pieChartRef.value) {
         pieChart = echarts.init(pieChartRef.value);
@@ -307,9 +319,7 @@ export default {
 
     const updatePieChart = () => {
       const option = {
-        tooltip: {
-          trigger: 'item'
-        },
+        tooltip: { trigger: 'item' },
         legend: {
           orient: 'vertical',
           left: 'left'
@@ -341,22 +351,16 @@ export default {
     const updateBarChart = () => {
       const monthlyData = getMonthlyEventDistribution();
       const option = {
-        tooltip: {
-          trigger: 'axis'
-        },
+        tooltip: { trigger: 'axis' },
         xAxis: {
           type: 'category',
           data: monthlyData.map(item => item.month)
         },
-        yAxis: {
-          type: 'value'
-        },
+        yAxis: { type: 'value' },
         series: [{
           data: monthlyData.map(item => item.count),
           type: 'bar',
-          itemStyle: {
-            color: '#7f73bf'
-          }
+          itemStyle: { color: '#7f73bf' }
         }]
       };
       barChart?.setOption(option);
@@ -378,13 +382,7 @@ export default {
       return Math.round((completed / eventTasks.length) * 100);
     };
 
-    const previewTasks = computed(() => {
-      return tasks.value.slice(0, 3);
-    });
-
-    const formatDate = (date) => {
-      return new Date(date).toLocaleDateString('ro-RO');
-    };
+    const formatDate = (date) => new Date(date).toLocaleDateString('ro-RO');
 
     const truncateText = (text, length) => {
       if (text.length <= length) return text;
@@ -397,49 +395,73 @@ export default {
       return Math.round((completedTasks / tasks.value.length) * 100);
     };
 
-    const fetchEvents = async () => {
-      try {
-        const userId = getUserIdFromToken();
-        const response = await axios.get(`http://localhost:8000/events/${userId}`);
-        events.value = response.data.events;
-      } catch (error) {
-        console.error('Eroare la preluarea evenimentelor:', error);
-      }
-    };
-
     const loadEventTasks = async () => {
       if (!selectedEventId.value) return;
-      const userId = getUserIdFromToken();
-      const eventId = selectedEventId.value;
-      console.log("Id:" + eventId)
-
-      try {
-        const response = await axios.get(`http://localhost:8000/tasks/${userId}/${eventId}`);
-        tasks.value = response.data.tasks;
-      } catch (error) {
-        console.error('Eroare la preluarea task-urilor:', error);
-      }
+      const userId = store.getters['user/userId'];
+      await store.dispatch('tasks/fetchTasks', {
+        userId,
+        eventId: selectedEventId.value
+      });
     };
 
-    const fetchAllTasks = async () => {
-      try {
-        const userId = getUserIdFromToken();
-        const response = await axios.get(`http://localhost:8000/tasks/${userId}`);
-        allTasks.value = response.data.tasks;
-        console.log("All tasks" + allTasks.value)
-        updatePieChart();
-      } catch (error) {
-        console.error('Eroare la preluarea tuturor task-urilor:', error);
-      }
+    const updateTaskStatus = async (task) => {
+      const userId = store.getters['user/userId'];
+      await store.dispatch('tasks/updateTask', {
+        taskId: task.id,
+        userId,
+        eventId: selectedEventId.value,
+        task: { ...task }
+      });
+      await loadEventTasks();
     };
 
-    watch(selectedEventId, (newValue) => {
-      if (!newValue) {
-        setTimeout(() => {
-          initializeCharts();
-        }, 100);
-      }
-    });
+    const addTask = async () => {
+      const userId = store.getters['user/userId'];
+      if (!userId || !selectedEventId.value) return;
+
+      const taskData = {
+        title: newTask.value.title,
+        description: newTask.value.description,
+        dueDate: newTask.value.dueDate,
+        status: newTask.value.status || 'Pending'
+      };
+
+      await store.dispatch('tasks/addTask', {
+        userId,
+        eventId: selectedEventId.value,
+       taskData
+      });
+      await loadEventTasks();
+      closeAddModal();
+    };
+
+    const updateTask = async () => {
+      const userId = store.getters['user/userId'];
+      await store.dispatch('tasks/updateTask', {
+        taskId: editingTask.value.id,
+        userId,
+        eventId: selectedEventId.value,
+        task: editingTask.value
+      });
+      await loadEventTasks();
+      closeEditModal();
+    };
+
+    const openAddModal = () => isAddModalOpen.value = true;
+    const closeAddModal = () => {
+      isAddModalOpen.value = false;
+      newTask.value = { title: '', description: '', dueDate: '', status: 'Pending' };
+    };
+    const openViewAllModal = () => isViewAllModalOpen.value = true;
+    const closeViewAllModal = () => isViewAllModalOpen.value = false;
+    const openEditModal = (task) => {
+      editingTask.value = { ...task };
+      isEditModalOpen.value = true;
+    };
+    const closeEditModal = () => {
+      isEditModalOpen.value = false;
+      editingTask.value = { id: null, title: '', description: '', dueDate: '', status: 'Pending', priority: 'Medium' };
+    };
 
     const getStatusClass = (status) => {
       const statusMap = {
@@ -450,139 +472,23 @@ export default {
       return statusMap[status] || '';
     };
 
-    const openEditModal = (task) => {
-      editingTask.value = { ...task };
-      isEditModalOpen.value = true;
-    };
-
-    const closeEditModal = () => {
-      isEditModalOpen.value = false;
-      editingTask.value = {
-        id: null,
-        title: '',
-        description: '',
-        dueDate: '',
-        status: 'Pending',
-        priority: 'Medium'
-      };
-    };
-
-    const updateTask = async () => {
-      const userId = getUserIdFromToken();
-      const taskId = editingTask.value.id;
-      try {
-        await axios.put(`http://localhost:8000/updateTask`, {
-          taskId,
-          userId,
-          eventId: selectedEventId.value,
-          task: editingTask.value,
-        });
-        console.log(taskId)
-
-        await loadEventTasks();
-        closeEditModal();
-      } catch (error) {
-        console.error('Eroare la actualizarea task-ului:', error);
-      }
-    };
-
-    const openAddModal = () => isAddModalOpen.value = true;
-    const closeAddModal = () => {
-      isAddModalOpen.value = false;
-      newTask.value = {
-        title: '',
-        description: '',
-        dueDate: '',
-        status: 'Pending'
-      };
-    };
-
-    const openViewAllModal = () => isViewAllModalOpen.value = true;
-    const closeViewAllModal = () => isViewAllModalOpen.value = false;
-
-    const addTask = async () => {
-      const userId = getUserIdFromToken();
-      console.log('Current values:', {
-        userId,
-        eventId: selectedEventId.value,
-        task: newTask.value
-      });
-
-      if (!userId) {
-        console.error('UserId lipsește - utilizatorul nu este autentificat');
-        return;
-      }
-
+    watch(selectedEventId, () => {
       if (!selectedEventId.value) {
-        console.error('Nu a fost selectat niciun eveniment');
-        return;
+        setTimeout(initializeCharts, 100);
       }
-
-      try {
-        const taskData = JSON.parse(JSON.stringify({
-          title: newTask.value.title,
-          description: newTask.value.description,
-          dueDate: newTask.value.dueDate,
-          status: newTask.value.status || 'Pending'
-        }));
-
-        const response = await axios.post('http://localhost:8000/addTask', {
-          userId: userId,
-          eventId: selectedEventId.value,
-          task: taskData
-        });
-
-        if (response.data.task) {
-          await loadEventTasks(); 
-          closeAddModal();
-        } else {
-          console.error('Task-ul nu a fost adăugat corect');
-        }
-
-      } catch (error) {
-        console.error('Eroare la adăugarea task-ului:', error.response?.data || error);
-      }
-    };
-
-    const getUserIdFromToken = () => {
-      const token = localStorage.getItem('user_token');
-      if (token) {
-        const decodedToken = JSON.parse(atob(token.split('.')[1]));
-        return decodedToken.id;
-      }
-      return null;
-    };
-
-    const updateTaskStatus = async (task) => {
-      const userId = getUserIdFromToken();
-      try {
-        await axios.put(`http://localhost:8000/updateTask`, {
-          taskId: task.id, 
-          userId,
-          eventId: selectedEventId.value,
-          task: {
-            ...task,
-            status: task.status
-          }
-        });
-
-        await loadEventTasks();
-      } catch (error) {
-        console.error('Eroare la actualizarea statusului:', error);
-        await loadEventTasks();
-      }
-    };
+    });
 
     onMounted(async () => {
-      await fetchEvents();
-      await fetchAllTasks();
+      const userId = store.getters['user/userId'];
+      await store.dispatch('events/fetchEvents', userId);
+      await store.dispatch('tasks/fetchAllTasks', userId);
       initializeCharts();
-
       window.addEventListener('resize', () => {
         pieChart?.resize();
         barChart?.resize();
       });
     });
+
     return {
       events,
       tasks,
@@ -622,24 +528,22 @@ export default {
 <style scoped>
 .task-manager-container {
   padding: 2rem;
-  max-width: 1200px;
+  max-width: 1000px;
   margin: 0 auto;
   background-color: #f9f1d0b6;
   border-radius: 12px;
 }
 
 .header-section {
-  color: #7f73bf;
-  text-align: center;
-  font-size: 1.2rem;
-  margin-bottom: 20px;
-  font-family: "Sour Gummy", sans-serif;
+  margin: 0;
+  padding: 0;
 }
 
 .event-selection-container {
   display: flex;
-  gap: 1rem;
-  justify-content: center;
+  justify-content: center; 
+  align-items: center; 
+  width: 100%;
   margin-top: 1rem;
 }
 
@@ -654,19 +558,6 @@ export default {
   transition: all 0.3s ease;
   font-family: "Sour Gummy";
   text-align: center;
-}
-
-.add-task-btn {
-  background-color: #d0cbec;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  font-family: "Sour Gummy", sans-serif;
-}
-
-.add-task-btn:hover {
-  background-color: #dbf2fc;
 }
 
 .progress-section {
@@ -743,26 +634,10 @@ export default {
   align-items: center;
 }
 
-.edit-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0.5rem;
-  border-radius: 50%;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.edit-btn:hover {
-  background: #f0f0f0;
-  transform: scale(1.1);
-}
-
 .edit-icon {
   font-size: 1.2rem;
 }
+
 
 .task-meta {
   display: flex;
@@ -851,36 +726,6 @@ export default {
   margin-top: 2rem;
 }
 
-.submit-btn,
-.cancel-btn {
-  padding: 0.75rem 1.5rem;
-  border-radius: 20px;
-  border: none;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.3s ease;
-}
-
-.submit-btn {
-  background-color: #7f73bf;
-  color: white;
-}
-
-.submit-btn:hover {
-  background-color: #6a5fa3;
-  transform: translateY(-2px);
-}
-
-.cancel-btn {
-  background-color: #e8e8e8;
-  color: #666;
-}
-
-.cancel-btn:hover {
-  background-color: #d8d8d8;
-  transform: translateY(-2px);
-}
-
 .status-select {
   padding: 0.5rem;
   border-radius: 15px;
@@ -893,43 +738,6 @@ export default {
 
 .status-select:hover {
   border-color: #7f73bf;
-}
-
-.view-all-btn {
-  display: block;
-  margin: 2rem auto;
-  padding: 0.75rem 2rem;
-  background-color: transparent;
-  border: 2px solid #7f73bf;
-  color: #7f73bf;
-  border-radius: 20px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  font-family: "Sour Gummy";
-  text-align: center;
-}
-
-.view-all-btn:hover {
-  background-color: #7391bf;
-  color: white;
-  transform: translateY(-2px);
-}
-
-.close-modal-btn {
-  background-color: #d0cbec;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  font-family: "Sour Gummy", sans-serif;
-  margin-top: 20px;
-  font-size: 1rem;
-  padding: 1rem;
-}
-
-.close-modal-btn:hover {
-  background-color: #dbf2fc;
 }
 
 .all-tasks-grid {
@@ -1064,6 +872,45 @@ export default {
   color: #333;
 }
 
+.no-tasks-message {
+  padding: 2rem;
+  text-align: center;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin: 1rem 0;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.empty-icon {
+  font-size: 3rem;
+}
+
+.empty-state h3 {
+  margin: 0;
+  color: #333;
+}
+
+.empty-state p {
+  margin: 0;
+  color: #666;
+}
+
+.add-task-btn{
+  background-color: #c4e7ff;
+  color: rgb(0, 0, 0);
+  font-family: 'Sour Gummy';
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
 
 @media (max-width: 1200px) {
   .stats-grid {
