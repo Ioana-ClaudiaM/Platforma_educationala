@@ -1,5 +1,5 @@
 const admin = require('firebase-admin');
-const serviceAccount = require('C:/Users/mierl/OneDrive/Desktop/Digital journal/server/database/digital-journal-26df0-firebase-adminsdk-yuu40-36f52841f7.json'); 
+const serviceAccount = require('../database/digital-journal-26df0-firebase-adminsdk-yuu40-30e959999f.json'); 
 
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
