@@ -16,7 +16,7 @@ export default {
   caret-color: transparent;
   min-height: 100vh;
   width: 100%;
-  background-image: url("../src/assets/4028065.jpg");
+  background-image: url("../src/assets/workplace-elements-marble-table-top-view.jpg");
   background-position: center;
   background-size: contain ;
 }

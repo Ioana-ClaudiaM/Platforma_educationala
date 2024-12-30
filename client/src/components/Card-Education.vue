@@ -23,7 +23,7 @@
                   <line x1="8" y1="2" x2="8" y2="6"></line>
                   <line x1="3" y1="10" x2="21" y2="10"></line>
                 </svg>
-                {{ formatDate(task.dueDate) }}
+                {{new Date(task.dueDate).toLocaleDateString('ro-RO')}}
               </span>
             </div>
           </div>
@@ -53,10 +53,19 @@ export default {
     const router = useRouter();
 
     const formatDate = (date) => {
-      return new Date(date).toLocaleDateString('ro-RO');
+      const d = new Date(date);
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
     };
 
-    const educationalTasks = computed(() => store.getters['tasks/allTasks']).value.filter(task => formatDate(task.dueDate) > formatDate(Date.now()));
+    const educationalTasks = computed(() => {
+      const allTasks = store.getters['tasks/allTasks'];
+      const today = formatDate(new Date());
+      
+      return allTasks.filter(task => {
+        const taskDate = formatDate(task.dueDate);
+        return taskDate >= today;
+      }).sort((a, b) => formatDate(a.dueDate) - formatDate(b.dueDate));
+    });
 
     onMounted(() => {
       const userId = store.getters['user/userId'];
