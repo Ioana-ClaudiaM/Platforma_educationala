@@ -7,7 +7,7 @@
           <h1 class="main-title">Învață mai eficient.<br>Organizează-ți studiul.<br>Reușește mai ușor.</h1>
           <p class="hero-subtitle">Platforma educațională care te ajută să-ți organizezi studiul și să-ți atingi obiectivele mai ușor.</p>
           <div class="cta-buttons">
-            <button @click="navigateTo('register')" class="primary-button">Începe Gratuit</button>
+            <button @click="navigateTo('signup')" class="primary-button">Începe Gratuit</button>
             <button @click="navigateTo('login')" class="secondary-button">Am cont deja</button>
           </div>
         </div>
@@ -56,7 +56,7 @@
       <div class="start-section">
         <h2>Pregătit să începi?</h2>
         <p>Creează-ți cont gratuit și începe să-ți organizezi studiul mai eficient!</p>
-        <button @click="navigateTo('register')" class="primary-button">Creează Cont Gratuit</button>
+        <button @click="navigateTo('signup')" class="primary-button">Creează Cont Gratuit</button>
       </div>
   
       <footer class="homepage-footer">
@@ -115,7 +115,7 @@
   }
   
   .hero-content {
-    background-color: rgba(255, 255, 255, 0.95);
+    background-color: rgba(255, 255, 255, 0.85);
     padding: 3rem;
     border-radius: 20px;
     max-width: 800px;
@@ -177,7 +177,7 @@
   
   .features-section, .testimonials-section {
     padding: 4rem 2rem;
-    background-color: rgba(255, 255, 255, 0.95);
+    background-color: rgba(255, 255, 255, 0.5);
     margin: 2rem;
     border-radius: 20px;
   }
@@ -247,7 +247,7 @@
   .start-section {
     text-align: center;
     padding: 4rem 2rem;
-    background-color: rgba(255, 255, 255, 0.95);
+    background-color: rgba(255, 255, 255, 0.8);
     margin: 2rem;
     border-radius: 20px;
   }
@@ -266,7 +266,7 @@
   
   .footer-content {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
     gap: 2rem;
     max-width: 1200px;
     margin: 0 auto;

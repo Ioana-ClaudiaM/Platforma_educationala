@@ -35,6 +35,8 @@ const loadGrades = async (req, res) => {
 
 const updateGrade = async (req, res) => {
     const { userId, subject } = req.body;
+    const token = req.headers.authorization?.split(' ')[1];
+    console.log("Tokennn:"+token)
     try {
         await db.collection('subject_grades').doc(userId).collection('subjects').doc(subject.name).update({
             ...subject,

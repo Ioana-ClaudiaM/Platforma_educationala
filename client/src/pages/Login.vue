@@ -14,9 +14,6 @@
           <input type="password" id="password" v-model="password" @blur="validatePassword" required>
           <span class="error-message">{{ passwordError }}</span>
         </div>
-        <div class="forgot-password">
-          <a href="/recover-password">Ai uitat parola?</a>
-        </div>
         <div class="button-link">
           <button type="submit" :disabled="!isFormValid" class="submit-btn">Intră în cont</button>
         </div>
@@ -25,6 +22,8 @@
         </div>
       </form>
     </div>
+    <button @click="goToHomepage()" class="homepage-button">Mergi pe pagina principală</button>
+
   </div>
 </template>
 
@@ -49,6 +48,9 @@ export default {
     const isSubmitting = ref(false);
     const loginError = ref('');
 
+    const goToHomepage = () => {
+      router.push('/');
+    };
    
     const validateEmail = () => {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -98,10 +100,7 @@ export default {
             localStorage.setItem('user_info', JSON.stringify(response.data.user));
             axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
             store.dispatch('user/setUser', response.data.user);
-            toast.success("Autentificare reușită! Bine ai venit!", {
-              timeout: 2000,
-              onClose: () => router.push('/profile')
-            });
+            toast.success("Autentificare reușită! Bine ai venit!");
           })
           .catch(error => {
             if (error.response) {
@@ -114,7 +113,6 @@ export default {
               loginError.value = 'A apărut o eroare neașteptată';
               toast.error('A apărut o eroare neașteptată');
             }
-            console.error('Eroare la logarea in cont:', error);
           })
           .finally(() => {
             isSubmitting.value = false;
@@ -134,7 +132,8 @@ export default {
       loginError,
       validateEmail,
       validatePassword,
-      submitForm
+      submitForm,
+      goToHomepage
     };
   }
 };
@@ -150,6 +149,7 @@ export default {
 
 .login-page {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
@@ -220,21 +220,6 @@ export default {
   box-shadow: 0 0 8px rgba(52, 152, 219, 0.3);
 }
 
-.forgot-password {
-  text-align: right;
-  margin-bottom: 20px;
-}
-
-.forgot-password a {
-  color: #3498db;
-  text-decoration: none;
-  font-size: 14px;
-}
-
-.forgot-password a:hover {
-  text-decoration: underline;
-}
-
 .submit-btn {
   width: 100%;
   padding: 14px;
@@ -280,6 +265,10 @@ export default {
   text-decoration: underline;
 }
 
+.homepage-button{
+  padding: 1rem;
+  margin-top: 2rem;
+}
 @media (max-width: 768px) {
   .login-container {
     flex-direction: column;

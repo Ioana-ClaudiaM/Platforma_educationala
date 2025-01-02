@@ -171,14 +171,18 @@ export default {
         };
 
         axios.post('http://localhost:8000/register', formData)
-          .then(() => {
-            toast.success("Contul a fost creat cu succes!", {
-              timeout: 2000,
-              onClose: () => router.push('/login')
-            });
+          .then((response) => {
+            toast.success("Contul a fost creat cu succes pentru utilizatorul cu emailul "+response.data.email);
+            router.push('/login');
           })
           .catch(error => {
-            toast.error(error || 'Eroare la crearea contului');
+            const errors = error.response.data.errors;
+            console.log(errors)
+            errors.forEach((error) => {
+              toast.error(`${error.msg}`);
+            });
+          })
+          .finally(() => {
             isSubmitting.value = false;
           });
       }

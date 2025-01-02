@@ -3,9 +3,11 @@ require('dotenv').config();
 const morgan = require('morgan');
 const cors = require('cors');
 const { generateFakeResourcesForAllUsers } = require('./studyResourcesManagement/generateFakeResources'); 
+const PORT = process.env.PORT || 8000;
 
 const app = express();
 app.use(express.json());
+
 
 const userRouter = require('./userManagement/userRouter');
 const timetableRouter = require('./timetableManagement/timetableRouter');
@@ -13,7 +15,6 @@ const gradesRouter = require('./gradesManagement/gradesRouter');
 const studyResourcesRouter = require('./studyResourcesManagement/studyResourcesRouter');
 const eventsRouter = require('./eventsManagement/eventsRouter');
 const tasksRouter = require('./tasksManagement/tasksRouter');
-const PORT = process.env.PORT || 8000;
 
 app.use(morgan(':method :url :status '));
 app.use(cors());

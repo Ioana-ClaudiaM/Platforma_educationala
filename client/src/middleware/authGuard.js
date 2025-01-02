@@ -1,8 +1,12 @@
 import axios from 'axios';
+import { useToast } from 'vue-toastification';
+
+const toast= useToast();
 
 export function authGuard(to, from, next) {
-   const token = localStorage.getItem('user_token');
+  const token = localStorage.getItem('user_token');
   if (!token) {
+    toast.error('Trebuie să fii autentificat pentru a accesa această pagină');
     next('/login');
     return;
   }
@@ -12,13 +16,11 @@ export function authGuard(to, from, next) {
       'Authorization': `Bearer ${token}`
     }
   })
-  .then(() => {
-    next();
-  })
-  .catch((error) => {
-    console.error("Error details:", error.response ? error.response.data : error);
-    localStorage.removeItem('user_token');
-    localStorage.removeItem('user_info');
-    next('/login');
-  });
+    .then(() => {
+      next();
+    })
+    .catch((error) => {
+      toast.error(error.response.data.message);
+      next('/login');
+    });
 }

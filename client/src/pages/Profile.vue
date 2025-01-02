@@ -12,10 +12,11 @@
 </template>
 
 <script>
+import { computed } from 'vue';
 import Navbar from '@/components/Navbar.vue';
 import CardEducation from '@/components/Card-Education.vue';
 import CardCalendar from '@/components/CardCalendar.vue';
-import { mapGetters } from 'vuex';
+import { useStore } from 'vuex';
 
 export default {
   name: "Profile-User",
@@ -24,9 +25,13 @@ export default {
     CardEducation,
     CardCalendar,
   },
-  computed: {
-    ...mapGetters('user', ['username', 'isLoggedIn']),
-  },
+  setup() {
+    const store = useStore();
+    const username = computed(() => store.getters['user/username']);
+    const isLoggedIn = computed(() => store.getters['user/isLoggedIn']);
+
+    return { username, isLoggedIn };
+  }
 };
 </script>
 
@@ -36,6 +41,9 @@ export default {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background-image: url(../assets/4028065.jpg);
+  background-position:center;
+  background-size: cover;
 }
 
 .main-content {

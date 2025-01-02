@@ -10,6 +10,8 @@ const getAllUsers = (req, res) => {
 
 const registerUser = async (req, res) => {
     const { username, email, password } = req.body;
+    console.log("Se creeaza un nou utilizator")
+    console.log(username,email,password)
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
         const newUser = { username, email, password: hashedPassword };
@@ -56,7 +58,7 @@ const generateToken = (user) => {
 
       const isPasswordValid = await bcrypt.compare(password, user.password);
       if (!isPasswordValid) {
-        return res.status(401).json({ message: 'Parolă incorrectă' });
+        return res.status(401).json({ message: 'Parolă incorectă' });
       }
   
       const token = generateToken(user);
@@ -68,7 +70,6 @@ const generateToken = (user) => {
       });
   
     } catch (error) {
-      console.error('Eroare la autentificare:', error);
       res.status(500).json({ message: 'Eroare internă de server', error: error.message });
     }
   };

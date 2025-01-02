@@ -1,5 +1,5 @@
 # Nodul principal de pachete
-node_modules/
+node_modules
 *.json
 
 # Fișierele log
