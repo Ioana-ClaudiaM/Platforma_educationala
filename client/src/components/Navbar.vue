@@ -30,7 +30,6 @@
 </template>
 
 <script>
-import { computed } from 'vue';
 import { useStore } from 'vuex';
 import { useToast } from 'vue-toastification';
 import { useRouter } from 'vue-router';
@@ -42,21 +41,17 @@ export default {
         const toast = useToast();
         const router = useRouter();
 
-        const isLoggedIn = computed(() => store.getters['user/isLoggedIn']);
-
         const handleLogout = async () => {
             try {
                 await store.dispatch('user/logout');
                 toast.success('Ai fost deconectat cu succes!');
                 await router.push('/login');
             } catch (error) {
-                console.error('Eroare la logout:', error);
                 toast.error('A apărut o eroare la deconectare');
             }
         };
 
         return {
-            isLoggedIn,
             handleLogout
         };
     }
@@ -98,24 +93,8 @@ export default {
 }
 
 .container-img:hover {
-    transform: translateY(-2px);
-    background-color: rgba(245, 236, 250, 0.8);
-}
-
-.container-img::after {
-    content: '';
-    position: absolute;
-    bottom: -2px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 0;
-    height: 3px;
-    background: linear-gradient(to right, #9c27b0, #673ab7);
-    transition: width 0.3s ease;
-}
-
-.container-img:hover::after {
-    width: 100%;
+    transform: scale(1.05);
+    background-color: rgba(219, 200, 230, 0.8);
 }
 
 .navbar img {

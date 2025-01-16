@@ -9,7 +9,7 @@
         <li v-for="task in educationalTasks" :key="task.id" class="task-item" :class="getStatusClass(task.status)">
           <div class="task-content">
             <div class="task-header">
-              <h3 class="task-title" @click="seeTask(task)">{{ task.title }}</h3>
+              <h3 class="task-title">{{ task.title }}</h3>
               <span class="status-badge" :class="getStatusClass(task.status)">
                 {{ getStatusText(task.status) }}
               </span>
@@ -17,24 +17,13 @@
             <p class="task-description">{{ task.description }}</p>
             <div class="task-footer">
               <span class="due-date">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                  <line x1="16" y1="2" x2="16" y2="6"></line>
-                  <line x1="8" y1="2" x2="8" y2="6"></line>
-                  <line x1="3" y1="10" x2="21" y2="10"></line>
-                </svg>
-                {{new Date(task.dueDate).toLocaleDateString('ro-RO')}}
+                {{ new Date(task.dueDate).toLocaleDateString('ro-RO') }}
               </span>
             </div>
           </div>
         </li>
       </ul>
-
       <div v-else class="empty-state">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-        </svg>
         <p>Nu există task-uri momentan</p>
       </div>
     </div>
@@ -44,42 +33,19 @@
 <script>
 import { computed, onMounted } from 'vue';
 import { useStore } from 'vuex';
-import { useRouter } from 'vue-router'
 
 export default {
-  name: 'EducationCard',
+  name: 'CardTasks',
   setup() {
     const store = useStore();
-    const router = useRouter();
-
-    const formatDate = (date) => {
-      const d = new Date(date);
-      return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-    };
 
     const educationalTasks = computed(() => {
       const allTasks = store.getters['tasks/allTasks'];
-      const today = formatDate(new Date());
-      
-      return allTasks.filter(task => {
-        const taskDate = formatDate(task.dueDate);
-        return taskDate >= today;
-      }).sort((a, b) => formatDate(a.dueDate) - formatDate(b.dueDate));
+      const now = new Date();
+      return allTasks
+      .filter(task => task && task.dueDate && new Date(task.dueDate) >= now)
+      .sort((a, b) => new Date(a.dueDate)-new Date(b.dueDate));
     });
-
-    onMounted(() => {
-      const userId = store.getters['user/userId'];
-      if (userId) {
-        store.dispatch('tasks/fetchAllTasks', userId);
-      }
-    });
-
-    const seeTask = async (task) => {
-      await router.push({
-                path: '/education',
-                query: { component:'Task-Manager',id: task.id } 
-              });
-    };
 
     const getStatusClass = (status) => {
       return {
@@ -98,12 +64,17 @@ export default {
       return statusMap[status] || status;
     };
 
+    onMounted(() => {
+      const userId = computed(() => store.getters['user/userId']);
+      if (userId.value) {
+        store.dispatch('tasks/fetchAllTasks', userId.value);
+      }
+    });
+
     return {
       educationalTasks,
-      formatDate,
       getStatusClass,
       getStatusText,
-      seeTask
     };
   },
 };
@@ -224,10 +195,6 @@ export default {
   color: #6b7280;
   text-align: center;
   gap: 1rem;
-}
-
-.empty-state svg {
-  color: #9ca3af;
 }
 
 .empty-state p {

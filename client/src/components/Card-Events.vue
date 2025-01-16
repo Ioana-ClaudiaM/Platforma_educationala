@@ -2,33 +2,25 @@
     <div class="calendar-summary-card">
         <div class="card-header">
             <h2>Evenimente Viitoare</h2>
-            <a @click="goToCalendar" class="view-all" style="cursor: pointer">
-                Vezi calendarul complet
-            </a>
         </div>
 
         <div class="events-timeline">
-            <div v-if="upcomingEvents.length > 0 && userId" class="events-list">
+            <div v-if="upcomingEvents.length > 0" class="events-list">
                 <div v-for="event in upcomingEvents" :key="event.id" class="event-item">
                     <div class="event-date">
-                        <span class="date">{{ formatDate(event.date) }}</span>
-                        <span class="time">{{ getDaysUntil(event.date) }}</span>
-                    </div>
-                    <div class="event-content">
+                        <span class="date">{{ new Date(event.date).toLocaleDateString('ro-RO')}}</span>
                         <div class="event-tag" :style="{ backgroundColor: getEventColor(event.type) }">
                             {{ event.type }}
                         </div>
+                    </div>
+                    <div class="event-content">
                         <h3 class="event-title">{{ event.title }}</h3>
                         <p v-if="event.description" class="event-description">{{ event.description }}</p>
                     </div>
                 </div>
             </div>
-            <div v-else-if="upcomingEvents.length <= 0 && userId" class="no-events">
-                <p>Nu ai evenimente programate în perioada următoare</p>
-            </div>
             <div v-else class="no-events">
-                <p>Conectează-te pentru a vedea lista de evenimente!</p>
-                <button @click="goToLogin">Conectează-te</button>
+                <p>Nu ai evenimente programate în perioada următoare</p>
             </div>
         </div>
     </div>
@@ -40,7 +32,7 @@ import { computed, onMounted } from 'vue';
 import { useStore } from 'vuex';
 
 export default {
-    name: 'CardCalendar',
+    name: 'CardEvents',
     setup() {
         const store = useStore();
 
@@ -63,34 +55,14 @@ export default {
             'Eveniment sportiv': '#9E9E9E'
         };
 
-        onMounted(async () => {
-            if (!store.getters['events/allEvents'].length && userId.value) {
-                await store.dispatch('events/fetchEvents', userId.value);
-            }
-        });
 
         const upcomingEvents = computed(() => {
             const allEvents = store.getters['events/allEvents'] || [];
             const now = new Date();
             return allEvents
-                .filter(event => new Date(event.date) >= now)
-                .sort((a, b) => new Date(a.date) - new Date(b.date))
-                .slice(0, 5);
+                .filter(event => event && event.date && new Date(event.date) >= now)
+                .sort((a, b) => new Date(a.date) - new Date(b.date));
         });
-
-        const formatDate = (date) => {
-            return new Date(date).toLocaleDateString('ro-RO', {
-                day: 'numeric',
-                month: 'short'
-            });
-        };
-
-        const getDaysUntil = (date) => {
-            const days = Math.ceil((new Date(date) - new Date()) / (1000 * 60 * 60 * 24));
-            if (days === 0) return 'Astăzi';
-            if (days === 1) return 'Mâine';
-            return `În ${days} zile`;
-        };
 
         const getEventColor = (type) => {
             return eventTypes[type] || '#9E9E9E';
@@ -100,22 +72,17 @@ export default {
             router.push('/login');
         }
 
-        const goToCalendar = async () => {
-            await router.push({
-                path: '/education',
-                query: { component: 'SchoolCalendar' }
-            });
-        };
+        onMounted(async () => {
+            if (userId.value) {
+                await store.dispatch('events/fetchEvents', userId.value);
+            }
+        });
 
-        
         return {
             upcomingEvents,
             userId,
-            formatDate,
-            getDaysUntil,
             getEventColor,
             goToLogin,
-            goToCalendar
         };
     }
 };
@@ -129,21 +96,17 @@ export default {
     width: 100%;
     max-width: 800px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    margin: 1rem 0;
+    margin-bottom: 1rem;
 }
 
-.card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-}
 
 .card-header h2 {
     font-size: 1.25rem;
     font-weight: 600;
     color: #111827;
     margin: 0;
+    text-align: center;
+    margin-bottom: 20px;
 }
 
 .view-all {
@@ -157,6 +120,9 @@ export default {
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    max-height: 200px;
+    overflow-y: scroll;
+    overflow-x: hidden;
 }
 
 .event-item {
@@ -184,13 +150,10 @@ export default {
     color: #111827;
 }
 
-.time {
-    font-size: 0.75rem;
-    color: #6B7280;
-}
-
 .event-content {
     flex: 1;
+    text-align: center;
+    margin-left: -80px;
 }
 
 .event-tag {
@@ -203,16 +166,6 @@ export default {
     margin-bottom: 0.5rem;
 }
 
-.event-title {
-    font-size: 1.5rem;
-    font-weight: 500;
-    color: #111827;
-    text-align: center;
-    margin-left: -50px;
-    margin-bottom: 20px;
-    width: 100%;
-}
-
 .event-description {
     font-size: 0.875rem;
     color: #6B7280;
@@ -222,7 +175,7 @@ export default {
 .no-events {
     text-align: center;
     padding: 2rem;
-    color: #6B7280;
+    color: #303338;
 }
 
 @media (max-width: 640px) {

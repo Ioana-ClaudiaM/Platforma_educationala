@@ -4,8 +4,8 @@
     <div class="main-content">
       <h1>Bine ai venit, {{ username }}!</h1>
       <div class="content">
-        <CardCalendar />
-        <CardEducation />
+        <CardEvents />
+        <CardTasks />
       </div>
     </div>
   </div>
@@ -14,23 +14,22 @@
 <script>
 import { computed } from 'vue';
 import Navbar from '@/components/Navbar.vue';
-import CardEducation from '@/components/Card-Education.vue';
-import CardCalendar from '@/components/CardCalendar.vue';
 import { useStore } from 'vuex';
+import CardTasks from '@/components/Card-Tasks.vue';
+import CardEvents from '@/components/Card-Events.vue';
 
 export default {
   name: "Profile-User",
   components: {
     Navbar,
-    CardEducation,
-    CardCalendar,
+    CardTasks,
+    CardEvents,
   },
   setup() {
     const store = useStore();
     const username = computed(() => store.getters['user/username']);
-    const isLoggedIn = computed(() => store.getters['user/isLoggedIn']);
 
-    return { username, isLoggedIn };
+    return { username };
   }
 };
 </script>
@@ -44,6 +43,7 @@ export default {
   background-image: url(../assets/4028065.jpg);
   background-position:center;
   background-size: cover;
+  padding: 5% 0%;
 }
 
 .main-content {
@@ -58,7 +58,6 @@ export default {
   text-align: center;
   font-weight: bold;
   transition: transform 0.3s ease, color 0.3s ease;
-  margin-top: 100px;
   font-size: 30px;
   color: rgb(167, 154, 253);
   background-color: #ffffffe9;

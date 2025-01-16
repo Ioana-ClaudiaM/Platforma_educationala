@@ -41,6 +41,7 @@ export default {
   setup() {
     const currentComponent = ref('Timetable'); 
     const router=useRouter();
+
     const menuItems = [
       { id: 1, name: 'Orar', component: 'Timetable' },
       { id: 2, name: 'Bibliotecă', component: 'Library' },

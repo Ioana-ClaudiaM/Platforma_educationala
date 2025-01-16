@@ -3,7 +3,6 @@
     <div class="timetable-header">
       <h2> 📅 Orar Personalizat</h2>
     </div>
-
     <form class="timetable-configuration" @submit.prevent="updateSchedule">
       <div class="config-inputs">
         <div class="input-container">
@@ -13,7 +12,6 @@
             <input type="number" v-model="startTime" id="startTime" min="0" max="23" required />
           </div>
         </div>
-
         <div class="input-container">
           <label for="hourDuration">Durată oră</label>
           <div class="input-wrapper">
@@ -21,7 +19,6 @@
             <input type="number" v-model="hourDuration" id="hourDuration" min="15" max="90" required />
           </div>
         </div>
-
         <div class="input-container">
           <label for="breakDuration">Durată pauză</label>
           <div class="input-wrapper">
@@ -29,7 +26,6 @@
             <input type="number" v-model="breakDuration" id="breakDuration" min="5" max="30" required />
           </div>
         </div>
-
         <button type="submit" class="generate-btn">
           <span>Generează Orar 🔄 </span>
         </button>
@@ -67,7 +63,7 @@
 </template>
 
 <script>
-import { ref, reactive, onMounted,watch} from 'vue';
+import { ref, reactive, onMounted,watch,computed} from 'vue';
 import { useStore } from 'vuex';
 import { useToast } from 'vue-toastification';
 
@@ -76,9 +72,9 @@ export default {
   setup() {
   const store = useStore();
   const toast = useToast();
-  const userId = store.getters['user/userId'];
+  const userId = computed(()=> store.getters['user/userId']);
   const days = ['Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri'];
- 
+  const timeSlots = ref([]);
   const startTime = ref(store.getters['timetable/timeConfig'].startTime);
   const hourDuration = ref(store.getters['timetable/timeConfig'].hourDuration);
   const breakDuration = ref(store.getters['timetable/timeConfig'].breakDuration);
@@ -90,8 +86,6 @@ export default {
     Joi: Array(10).fill(''),
     Vineri: Array(10).fill('')
   });
-
-  const timeSlots = ref([]);
 
   const formatTime = (timeInMinutes) => {
     const hours = Math.floor(timeInMinutes / 60);
@@ -121,7 +115,7 @@ export default {
 
     try {
       await store.dispatch('timetable/saveTimetable', {
-        userId,
+        userId:userId.value,
         scheduleData
       });
       toast.success('Orarul a fost salvat cu succes!');
@@ -132,33 +126,29 @@ export default {
   };
 
   const loadSchedule = async () => {
-    if (!userId) return;
-
-    try {
-      await store.dispatch('timetable/loadTimetable', userId);
-      
-      const timeConfig = store.getters['timetable/timeConfig'];
-      startTime.value = timeConfig.startTime;
-      hourDuration.value = timeConfig.hourDuration;
-      breakDuration.value = timeConfig.breakDuration;
-      
-      updateSchedule();
-
-      const storeSchedule = store.getters['timetable/schedule'];
-      if (storeSchedule) {
-        days.forEach(day => {
-          schedule[day] = storeSchedule[day] || Array(10).fill('');
-        });
-      }
-    } catch (error) {
-      toast.error('A apărut o eroare la încărcarea orarului.');
+  if (!userId.value) return;
+  try {
+    await store.dispatch('timetable/loadTimetable', userId.value);
+    const storeSchedule = store.getters['timetable/schedule'];
+    if (storeSchedule) {
+      days.forEach(day => {
+        schedule[day] = storeSchedule[day] || Array(10).fill('');
+      });
     }
-  };
+    const timeConfig = store.getters['timetable/timeConfig'];
+    startTime.value = timeConfig.startTime;
+    hourDuration.value = timeConfig.hourDuration;
+    breakDuration.value = timeConfig.breakDuration;
+    updateSchedule();
+  } catch (error) {
+    toast.error('A apărut o eroare la încărcarea orarului.');
+  }
+};
 
   const removeSubject = async (day, idx) => {
     try {
       await store.dispatch('timetable/deleteSubject', {
-        userId,
+        userId:userId.value,
         day,
         index: idx
       });
@@ -176,7 +166,11 @@ export default {
     }
   });
 
-  onMounted(loadSchedule);
+  onMounted(async () => {
+  if (userId.value) {
+    await loadSchedule();
+  }
+});
 
   return {
     startTime,

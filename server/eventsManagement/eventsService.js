@@ -24,33 +24,6 @@ const saveEvent = async (req, res) => {
     }
 };
 
-const loadEvents = async (req, res) => {
-    const { userId } = req.params;
-
-    try {
-        let query = db.collection('users').doc(userId).collection('events');
-
-        const eventsSnapshot = await query.get();
-
-        if (eventsSnapshot.empty) {
-            return res.status(404).send({ message: 'Nu au fost găsite evenimente pentru acest utilizator.' });
-        }
-
-        const events = [];
-        eventsSnapshot.forEach(doc => {
-            events.push({
-                id: doc.id,
-                ...doc.data()
-            });
-        });
-
-        res.status(200).send({ events });
-    } catch (error) {
-        console.error('Eroare la încărcarea evenimentelor:', error);
-        res.status(500).send({ error: 'A apărut o eroare la încărcarea evenimentelor.' });
-    }
-};
-
 const updateEvent = async (req, res) => {
     const { userId, event } = req.body;
 
@@ -140,7 +113,6 @@ const fetchEvents = async (req, res) => {
 
 module.exports = {
     saveEvent,
-    loadEvents,
     updateEvent,
     deleteEvent,
     fetchEvents

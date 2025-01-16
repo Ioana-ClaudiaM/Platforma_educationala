@@ -3,9 +3,9 @@ const admin = require('firebase-admin');
 
 const saveSchedule = async (req, res) => {
     const { userId, schedule, startTime, hourDuration, breakDuration } = req.body;
-    
+    console.log(schedule)
     try {
-      await db.collection('schedules').doc(userId).set({
+      await db.collection('users').doc(userId).collection('timetables').add({
         schedule: schedule,
         startTime: startTime,
         hourDuration: hourDuration,
@@ -21,16 +21,16 @@ const saveSchedule = async (req, res) => {
   
   const loadSchedule = async (req, res) => {
     const userId = req.params.userId;
-   
+    
     try {
-      const doc = await db.collection('schedules').doc(userId).get();
-     
-      if (!doc.exists) {
+      const userDocRef = await db.collection('users').doc(userId).collection('timetables').get();
+      
+      if (userDocRef.empty) {
         return res.status(404).send({ message: 'No schedule found for this user' });
       }
-     
-      const scheduleData = doc.data();
-     
+  
+      const scheduleData = userDocRef.docs[0].data();
+      
       res.status(200).send({
         schedule: scheduleData.schedule,
         timeConfig: {
@@ -44,20 +44,21 @@ const saveSchedule = async (req, res) => {
       res.status(500).send({ error: 'A apărut o eroare la încărcarea orarului.' });
     }
   };
+  
 
   const deleteSubject = async (req, res) => {
     const { userId, day, index } = req.body;
   
     try {
-      const userDocRef = db.collection('schedules').doc(userId);
+      const userDocRef = db.collection('users').doc(userId).collection('timetables');
       const doc = await userDocRef.get();
   
       if (!doc.exists) {
         return res.status(404).send({ message: 'Orarul nu există pentru acest utilizator.' });
       }
   
-      const scheduleData = doc.data().schedule;
-      
+      const scheduleData = doc.docs[0].data();
+
       if (scheduleData[day]) {
         scheduleData[day][index] = ''; 
       }
