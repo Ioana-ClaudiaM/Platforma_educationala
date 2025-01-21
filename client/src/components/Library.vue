@@ -9,43 +9,48 @@
       </button>
     </div>
 
-    <div class="resources-grid">
-      <div v-for="resource in paginatedResources" :key="resource.id" class="resource-card">
+    <button class="add-resource-btn" @click="showModal = true">
+      Adaugă Resursă
+    </button>
+
+    <div v-if="resources.length" class="resources-grid">
+       <div  v-for="resource in resources" :key="resource.id" class="resource-card">
         <div class="resource-header">
-          <span class="resource-icon">{{ getResourceTypeIcon(resource.type) }}</span>
-          <h3>{{ resource.title }}</h3>
+          <div class="resource-title">
+            <span class="resource-icon">{{ getResourceTypeIcon(resource.type) }}</span>
+            <h3>{{ resource.title }}</h3>
+          </div>
+
+          <div class="action-buttons">
+            <button @click="deleteResource(resource.id)">❌</button>
+            <button @click="updateResource(resource.id,resource)">✏️</button>
+          </div>
         </div>
+
         <div class="resource-details">
           <p>{{ resource.description }}</p>
           <div class="resource-links">
-            <a v-for="link in resource.links" :key="link.url" :href="link.url" target="_blank">
+            <a v-for="link in resource.links" :key="link.url" :href="link.url" target="_blank"
+              title="Apasă pentru a deschide link-ul">
               {{ link.type }}
             </a>
           </div>
         </div>
       </div>
     </div>
+    <div v-else class="no-resources"> Momentan nu sunt resurse disponibile pentru această disciplină.</div>
 
-    <div v-if="filteredResources.length > resourcesPerPage" class="pagination">
-      <button v-if="!showAllResources" @click="showAllResources = true">
-        Arată Toate Resursele
-      </button>
-      <button v-else @click="showAllResources = false">
-        Ascunde Resurse
-      </button>
-    </div>
-
-    <button class="add-resource-btn" @click="showModal = true">
-      Adaugă Resursă
-    </button>
-
-    <Modal :isOpen="showModal" title="Adaugă Resursă Nouă" :fields="modalFields" :initialData="initialResourceData"
-      @submit="handleResourceSubmit" @close="showModal = false" />
+    <Modal :isOpen="showModal" 
+           :title="isEditing ? 'Editează Resursă' : 'Adaugă Resursă Nouă'" 
+           :fields="modalFields" 
+           :initialData="initialResourceData" 
+           @submit="handleSubmit" 
+           @close="closeModal" />
   </div>
 </template>
 
 <script>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useStore } from 'vuex'
 import { useToast } from 'vue-toastification';
 import Modal from './Modal.vue'
@@ -58,17 +63,32 @@ export default {
   setup() {
     const store = useStore();
     const toast = useToast();
-    const resourcesPerPage = 2
-    const showAllResources = ref(false)
     const showModal = ref(false)
+    const isEditing = ref(false);
+    const editingResourceId = ref(null);
 
-    const initialResourceData = {
+    const userId = computed(() => store.getters['user/userId']);
+
+    const resourceTypes = computed(() => store.getters['library/resourceTypes']);
+
+    const selectedCategory = computed(() => {
+      return store.getters['library/selectedCategory'] ? store.getters['library/selectedCategory'] : categories.value[0];
+    });
+
+    const resources = computed(() => store.getters['library/filteredResources'])
+
+    const categories = computed(() => store.getters['timetable/schedule']
+      ? (Object.values(store.getters['timetable/schedule']).flat().filter(Boolean))
+      : []
+    )
+
+    const initialResourceData = ref({
       title: '',
       type: '',
       category: '',
       description: '',
       links: []
-    }
+    })
 
     const modalFields = computed(() => [
       {
@@ -140,62 +160,20 @@ export default {
       }
     ])
 
-    const resourceTypes = computed(() => store.getters['library/resourceTypes'])
-    const selectedCategory = computed(() => store.getters['library/selectedCategory'])
-    const filteredResources = computed(() => store.getters['library/filteredResources'])
-    const categories = computed(() => store.getters['timetable/schedule']
-      ? [...new Set(Object.values(store.getters['timetable/schedule']).flat().filter(Boolean))]
-      : []
-    )
+    
+    function closeModal() {
+      showModal.value = false;
+      isEditing.value = false;
+      editingResourceId.value = null;
 
-    const paginatedResources = computed(() =>
-      showAllResources.value
-        ? filteredResources.value
-        : filteredResources.value.slice(0, resourcesPerPage)
-    )
-
-    async function handleResourceSubmit(resource) {
-      const userId = store.getters['user/userId'];
-      if (!userId) {
-        toast.error('User ID not found');
-        return;
-      }
-
-      try {
-        await store.dispatch('library/addResource', {
-          userId,
-          resource: {
-            ...resource,
-            createdAt: new Date().toISOString()
-          }
-        });
-        toast.success('Resursa a fost adăugată cu succes!');
-        showModal.value = false;
-      } catch (error) {
-        toast.error('A apărut o eroare la adăugarea resursei.');
-        console.error("Eroare la adăugarea resursei:", error);
-      }
+      initialResourceData.value = {
+        title: '',
+        type: '',
+        category: '',
+        description: '',
+        links: []
+      };
     }
-
-    onMounted(async () => {
-      const userId = store.getters['user/userId']
-      if (userId) {
-        try {
-          await store.dispatch('library/loadResources', userId)
-          if (categories.value.length > 0 && !selectedCategory.value) {
-            setCategory(categories.value[0])
-          }
-        } catch (error) {
-          console.error("Eroare la încărcarea resurselor:", error)
-        }
-      }
-    })
-
-    watch(() => store.getters['timetable/schedule'], (newSchedule) => {
-      if (newSchedule && categories.value.length > 0 && !selectedCategory.value) {
-        setCategory(categories.value[0])
-      }
-    })
 
     function getResourceTypeIcon(type) {
       return resourceTypes.value[type] || '📁'
@@ -205,20 +183,104 @@ export default {
       store.dispatch('library/setSelectedCategory', category)
     }
 
+    async function loadResources() {
+      if (!userId.value) return;
+      try {
+        await store.dispatch('library/loadResources', userId.value)
+      } catch (error) {
+        console.error("Eroare la încărcarea resurselor:", error)
+      }
+    }
+
+    async function saveResource(resource) {
+      try {
+        await store.dispatch('library/addResource', {
+          userId:userId.value,
+          resource: {
+            ...resource,
+            createdAt: new Date().toISOString()
+          }
+        });
+        toast.success('Resursa a fost adăugată cu succes!');
+        showModal.value = false;
+      } catch (error) {
+        toast.error('A apărut o eroare la adăugarea resursei.');
+      }
+    }
+
+    async function deleteResource(resourceId) {
+      try {
+        await store.dispatch('library/deleteResource', {
+          userId:userId.value,
+          resourceId
+        });
+        toast.success('Resursa a fost ștearsă cu succes!');
+      } catch (error) {
+        toast.error('A apărut o eroare la ștergerea resursei.');
+      }
+    }
+
+    async function updateResource(resourceId, resource) {
+      isEditing.value = true;
+      editingResourceId.value = resourceId;
+      
+      initialResourceData.value = { ...resource };
+      
+      showModal.value = true;
+    }
+
+    async function handleSubmit(resourceData) {
+      try {
+        if (isEditing.value) {
+          await store.dispatch('library/updateResource', {
+            userId: userId.value,
+            resourceId: editingResourceId.value,
+            resourceData: resourceData,
+          });
+          toast.success('Resursa a fost actualizată cu succes!');
+        } else {
+          await store.dispatch('library/addResource', {
+            userId: userId.value,
+            resource: {
+              ...resourceData,
+              createdAt: new Date().toISOString()
+            }
+          });
+          toast.success('Resursa a fost adăugată cu succes!');
+        }
+        closeModal();
+      } catch (error) {
+        toast.error(isEditing.value ? 
+          'A apărut o eroare la actualizarea resursei.' : 
+          'A apărut o eroare la adăugarea resursei.'
+        );
+      }
+    }
+
+    onMounted(async () => {
+      if (userId.value)
+        await loadResources();
+
+      if (categories.value.length > 0) {
+          setCategory(categories.value[0])
+      }
+    })
+
     return {
       categories,
       selectedCategory,
-      filteredResources,
-      paginatedResources,
+      resources,
       resourceTypes,
-      showAllResources,
-      resourcesPerPage,
       getResourceTypeIcon,
       setCategory,
       showModal,
       modalFields,
       initialResourceData,
-      handleResourceSubmit,
+      saveResource,
+      deleteResource,
+      updateResource,
+      closeModal,
+      handleSubmit,
       Modal
     }
   }
@@ -226,13 +288,29 @@ export default {
 </script>
 
 <style scoped>
+.action-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.action-buttons button {
+  background-color: #998a572d;
+  border: none;
+}
+
+.resource-title {
+  display: flex;
+}
+
 .digital-library {
-  width: fit-content;
+  min-width: 600px;
+  max-height: 400px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 40px;
   background-color: #f9f1d0b6;
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  overflow-x: scroll;
 }
 
 .category-selector {
@@ -241,6 +319,11 @@ export default {
   flex-wrap: wrap;
   margin-bottom: 20px;
   gap: 10px;
+}
+
+.category-selector button {
+  background-color: #92e7ac;
+  font-size: 1.2rem;
 }
 
 .category-selector button.active {
@@ -268,6 +351,7 @@ export default {
 
 .resource-header {
   display: flex;
+  justify-content: space-between;
   align-items: center;
   margin-bottom: 10px;
   color: #7f73bf;
@@ -297,73 +381,17 @@ export default {
   font-size: 0.9em;
 }
 
-.pagination {
-  display: flex;
-  justify-content: center;
-  margin-top: 20px;
+.add-resource-btn {
+  margin-left: 40%;
+  margin-bottom: 5%;
 }
 
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background-color: white;
-  padding: 30px;
-  border-radius: 10px;
-  width: 90%;
-  max-width: 500px;
-  max-height: 80%;
-  overflow-y: auto;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.modal-content.all-resources {
-  max-width: 800px;
-}
-
-.modal-content form input,
-.modal-content form select,
-.modal-content form textarea {
-  width: 100%;
-  margin-bottom: 10px;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-}
-
-.links-input .link-input {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-.modal-buttons {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 20px;
-}
-
-.modal-buttons button,
-.close-modal-btn,
-.pagination-button,
-.links-input button {
-  background-color: #d0cbec;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  font-family: "Sour Gummy", sans-serif;
-  padding: 5px;
-  height: fit-content;
+.no-resources{
+  color: #513cc9;
+  font-size: 1.5em;
+  font-weight: 600;
+  font-family: "Sour Gummy";
+  text-align: center;
+  margin-bottom: 5px;
 }
 </style>

@@ -35,12 +35,10 @@ const libraryModule = {
                 state.resources = state.resources.filter(r => r.id !== resourceId);
             }
         },
-        UPDATE_RESOURCE(state, { id, updatedData }) {
-            if (state.resources) {
-                const index = state.resources.findIndex(r => r.id === id);
-                if (index !== -1) {
-                    state.resources[index] = { ...state.resources[index], ...updatedData };
-                }
+        UPDATE_RESOURCE(state, { resourceId, resourceData }) {
+            const index = state.resources.findIndex(r => r.id === resourceId);
+            if (index !== -1) {
+              state.resources[index] = { ...state.resources[index], ...resourceData };
             }
         }
     },
@@ -50,7 +48,6 @@ const libraryModule = {
             try {
                 const response = await axios.get(`http://localhost:8000/getUserResources/${userId}`);
                 commit('SET_RESOURCES', response.data);
-                return response.data;
             } catch (error) {
                 console.error('Eroare la încărcarea resurselor:', error);
                 throw error;
@@ -58,20 +55,10 @@ const libraryModule = {
         },
 
         async addResource({ commit }, { userId, resource }) {
-            const token = localStorage.getItem('user_token');
-            if (!token) {
-                throw new Error('Utilizatorul nu este autentificat.');
-            }
-
             try {
                 const response = await axios.post(
                     'http://localhost:8000/addResource',
                     { userId, resource },
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
-                    }
                 );
                 commit('ADD_RESOURCE', response.data.resource);
             } catch (error) {
@@ -82,6 +69,7 @@ const libraryModule = {
 
         async deleteResource({ commit }, { userId, resourceId }) {
             try {
+                console.log(resourceId)
                 await axios.post('http://localhost:8000/deleteResource', {
                     userId,
                     resourceId
@@ -95,13 +83,12 @@ const libraryModule = {
 
         async updateResource({ commit }, { userId, resourceId, resourceData }) {
             try {
-                const response = await axios.post('http://localhost:8000/updateResource', {
-                    userId,
-                    resourceId,
-                    ...resourceData
-                });
+              const response = await axios.post('http://localhost:8000/updateResource', {
+                userId,
+                resourceId,
+                resourceData
+              });
                 commit('UPDATE_RESOURCE', { id: resourceId, updatedData: response.data });
-                return response.data;
             } catch (error) {
                 console.error('Eroare la actualizarea resursei:', error);
                 throw error;

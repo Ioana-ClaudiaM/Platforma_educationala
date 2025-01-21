@@ -278,8 +278,8 @@ export default {
       priority: 'Medium'
     });
 
-    const events = computed(() => store.getters['events/allEvents']);
-    const tasks = computed(() => store.getters['tasks/eventTasks']);
+    const events = computed(() => store.getters['events/allEvents'] ? store.getters['events/allEvents'] : []);
+    const tasks = computed(() => store.getters['tasks/eventTasks'] ? store.getters['tasks/eventTasks'] : []);
     const allTasks = computed(() => store.getters['tasks/allTasks']);
 
     const completedTasksCount = computed(() =>
@@ -300,7 +300,6 @@ export default {
       return events.value
         .filter(event => new Date(event.date) >= today)
         .sort((a, b) => new Date(a.date) - new Date(b.date))
-        .slice(0, 5);
     });
 
     const previewTasks = computed(() => tasks.value.slice(0, 3));

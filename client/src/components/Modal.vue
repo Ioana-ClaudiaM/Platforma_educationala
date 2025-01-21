@@ -285,6 +285,7 @@
     border-radius: 6px;
     cursor: pointer;
     margin-top: 10px;
+    position: fixed;
   }
   
   .add-btn:hover {

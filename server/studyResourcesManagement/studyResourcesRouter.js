@@ -4,5 +4,8 @@ const studyResourcesService = require('../studyResourcesManagement/studyResource
 
 router.post('/addResource', studyResourcesService.addResource);
 router.get('/getUserResources/:userId',studyResourcesService.getUserResources);
+router.post('/deleteResource',studyResourcesService.deleteResource);
+router.post('/updateResource',studyResourcesService.updateResource);
+
 module.exports = router;
 

@@ -54,7 +54,7 @@ const timetableModule = {
       
       async saveTimetable({ commit }, { userId, scheduleData }) {
         try {
-          await axios.post('http://localhost:8000/saveTimetable', {
+          const response = await axios.post('http://localhost:8000/saveTimetable', {
             userId,
             ...scheduleData
           });
@@ -64,38 +64,9 @@ const timetableModule = {
             hourDuration: scheduleData.hourDuration,
             breakDuration: scheduleData.breakDuration
           });
+          return response;
         } catch (error) {
-          console.error('Error saving timetable:', error);
-          throw error;
-        }
-      },
-      
-      async addSubject({ commit }, { userId, day, index, subject }) {
-        try {
-          await axios.post('http://localhost:8000/addSubject', {
-            userId,
-            day,
-            index,
-            subject
-          });
-          commit('ADD_SUBJECT', { day, index, subject });
-        } catch (error) {
-          console.error('Error adding subject:', error);
-          throw error;
-        }
-      },
-      
-      async updateTimetableSubject({ commit }, { userId, day, index, value }) {
-        try {
-          await axios.post('http://localhost:8000/updateSubject', {
-            userId,
-            day,
-            index,
-            value
-          });
-          commit('UPDATE_SUBJECT', { day, index, value });
-        } catch (error) {
-          console.error('Error updating subject:', error);
+          console.log(" Error saving timetable:", error);
           throw error;
         }
       },

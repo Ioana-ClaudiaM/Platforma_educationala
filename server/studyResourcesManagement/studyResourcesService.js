@@ -53,6 +53,56 @@ const addResource = async (req, res) => {
   }
 };
 
+const deleteResource = async (req, res) => {
+  const {resourceId,userId} = req.body;
 
+  if (!userId) {
+    return res.status(400).json({ message: 'User ID is required' });
+  }
 
-module.exports = { addResource, getUserResources };
+  if (!resourceId) {
+    return res.status(400).json({ message: 'Resource ID is required' });
+  }
+
+  try {
+    await db
+      .collection('users')
+      .doc(userId)
+      .collection('resources')
+      .doc(resourceId)
+      .delete();
+
+    return res.status(200).json({ message: 'Resource deleted successfully!' });
+  } catch (error) {
+    console.error('Error deleting resource:', error);
+    return res.status(500).json({ message: 'Error deleting resource' });
+  }
+}
+
+const updateResource = async (req, res) => {
+const { userId, resourceId, resourceData } = req.body;
+console.log(resourceId,resourceData)
+
+  if (!userId) {
+    return res.status(400).json({ message: 'User ID is required' });
+  }
+
+  if (!resourceId) {
+    return res.status(400).json({ message: 'Resource ID is required' });
+  }
+
+  try {
+    await db
+      .collection('users')
+      .doc(userId)
+      .collection('resources')
+      .doc(resourceId)
+      .update(resourceData);
+    return res.status(200).json({ message: 'Resource updated successfully!' });
+  } catch (error) {
+    console.error('Error updating resource:', error);
+    return res.status(500).json({ message: 'Error updating resource' });
+  }
+}
+
+module.exports = { addResource, getUserResources, deleteResource, updateResource };

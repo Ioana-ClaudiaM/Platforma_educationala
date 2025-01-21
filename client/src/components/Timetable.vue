@@ -2,7 +2,8 @@
   <div class="timetable-wrapper">
     <div class="timetable-header">
       <h2> 📅 Orar Personalizat</h2>
-    </div>
+    </div
+    >
     <form class="timetable-configuration" @submit.prevent="updateSchedule">
       <div class="config-inputs">
         <div class="input-container">
@@ -63,7 +64,7 @@
 </template>
 
 <script>
-import { ref, reactive, onMounted,watch,computed} from 'vue';
+import { ref, reactive, onMounted, watch, computed} from 'vue';
 import { useStore } from 'vuex';
 import { useToast } from 'vue-toastification';
 
@@ -120,8 +121,7 @@ export default {
       });
       toast.success('Orarul a fost salvat cu succes!');
     } catch (error) {
-      console.error("Eroare la salvarea orarului:", error);
-      toast.error('A apărut o eroare la salvarea orarului.');
+      toast.error('A apărut o eroare la salvarea orarului.'+error);
     }
   };
 
@@ -135,13 +135,14 @@ export default {
         schedule[day] = storeSchedule[day] || Array(10).fill('');
       });
     }
+
     const timeConfig = store.getters['timetable/timeConfig'];
     startTime.value = timeConfig.startTime;
     hourDuration.value = timeConfig.hourDuration;
     breakDuration.value = timeConfig.breakDuration;
-    updateSchedule();
+    updateSchedule()
   } catch (error) {
-    toast.error('A apărut o eroare la încărcarea orarului.');
+    toast.error('A apărut o eroare la încărcarea orarului.'+error);
   }
 };
 
@@ -154,7 +155,7 @@ export default {
       });
       toast.success('Materia a fost ștearsă cu succes!');
     } catch (error) {
-      toast.error('A apărut o eroare la ștergerea materiei.');
+      toast.error('A apărut o eroare la ștergerea materiei.'+error);
     }
   };
 

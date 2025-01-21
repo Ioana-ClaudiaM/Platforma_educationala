@@ -10,7 +10,6 @@ const getAllUsers = (req, res) => {
 
 const registerUser = async (req, res) => {
     const { username, email, password } = req.body;
-    console.log("Se creeaza un nou utilizator")
     console.log(username,email,password)
     try {
         const hashedPassword = await bcrypt.hash(password, 10);

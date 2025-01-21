@@ -40,7 +40,7 @@ label {
 
 button {
   padding: 10px 15px;
-  background-color: #c4e7ff;
+  background-color: #8dddf1;
   color: rgb(0, 0, 0);
   font-family: 'Sour Gummy';
   border: none;
@@ -49,6 +49,7 @@ button {
   transition: all 0.3s ease;
   font-weight: 500;
   margin-top: 10px;
+  border: 2px dotted rgb(6, 114, 114);
 }
 
 button:hover {
