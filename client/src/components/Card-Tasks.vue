@@ -82,7 +82,7 @@ export default {
 
 <style scoped>
 .card-education {
-  background-color: #ffffff;
+  background-color: #ffffffd5;
   border: 1px solid #e5e7eb;
   border-radius: 16px;
   padding: 1.5rem;

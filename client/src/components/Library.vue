@@ -1,6 +1,6 @@
 <template>
   <div class="digital-library">
-    <h2>📚 Biblioteca Mea Digitală de Resurse 🧠</h2>
+    <h2>📓 Biblioteca Mea Digitală de Resurse </h2>
 
     <div class="category-selector">
       <button v-for="category in categories" :key="category" @click="setCategory(category)"
@@ -10,11 +10,11 @@
     </div>
 
     <button class="add-resource-btn" @click="showModal = true">
-      Adaugă Resursă
+      ➕ Adaugă Resursă
     </button>
 
     <div v-if="resources.length" class="resources-grid">
-       <div  v-for="resource in resources" :key="resource.id" class="resource-card">
+      <div v-for="resource in resources" :key="resource.id" class="resource-card">
         <div class="resource-header">
           <div class="resource-title">
             <span class="resource-icon">{{ getResourceTypeIcon(resource.type) }}</span>
@@ -23,7 +23,7 @@
 
           <div class="action-buttons">
             <button @click="deleteResource(resource.id)">❌</button>
-            <button @click="updateResource(resource.id,resource)">✏️</button>
+            <button @click="updateResource(resource.id, resource)">✏️</button>
           </div>
         </div>
 
@@ -38,14 +38,10 @@
         </div>
       </div>
     </div>
-    <div v-else class="no-resources"> Momentan nu sunt resurse disponibile pentru această disciplină.</div>
+    <div v-else class="no-resources"> Momentan nu sunt resurse disponibile pentru această disciplină❕</div>
 
-    <Modal :isOpen="showModal" 
-           :title="isEditing ? 'Editează Resursă' : 'Adaugă Resursă Nouă'" 
-           :fields="modalFields" 
-           :initialData="initialResourceData" 
-           @submit="handleSubmit" 
-           @close="closeModal" />
+    <Modal :isOpen="showModal" :title="isEditing ? 'Editează Resursă' : 'Adaugă Resursă Nouă'" :fields="modalFields"
+      :initialData="initialResourceData" @submit="handleSubmit" @close="closeModal" />
   </div>
 </template>
 
@@ -78,7 +74,7 @@ export default {
     const resources = computed(() => store.getters['library/filteredResources'])
 
     const categories = computed(() => store.getters['timetable/schedule']
-      ? (Object.values(store.getters['timetable/schedule']).flat().filter(Boolean))
+      ? [...new Set(Object.values(store.getters['timetable/schedule']).flat().filter(Boolean))]
       : []
     )
 
@@ -160,7 +156,7 @@ export default {
       }
     ])
 
-    
+
     function closeModal() {
       showModal.value = false;
       isEditing.value = false;
@@ -192,26 +188,10 @@ export default {
       }
     }
 
-    async function saveResource(resource) {
-      try {
-        await store.dispatch('library/addResource', {
-          userId:userId.value,
-          resource: {
-            ...resource,
-            createdAt: new Date().toISOString()
-          }
-        });
-        toast.success('Resursa a fost adăugată cu succes!');
-        showModal.value = false;
-      } catch (error) {
-        toast.error('A apărut o eroare la adăugarea resursei.');
-      }
-    }
-
     async function deleteResource(resourceId) {
       try {
         await store.dispatch('library/deleteResource', {
-          userId:userId.value,
+          userId: userId.value,
           resourceId
         });
         toast.success('Resursa a fost ștearsă cu succes!');
@@ -223,37 +203,48 @@ export default {
     async function updateResource(resourceId, resource) {
       isEditing.value = true;
       editingResourceId.value = resourceId;
-      
+
       initialResourceData.value = { ...resource };
-      
+
       showModal.value = true;
     }
 
-    async function handleSubmit(resourceData) {
+    async function saveResource(resourceData) {
       try {
-        if (isEditing.value) {
-          await store.dispatch('library/updateResource', {
-            userId: userId.value,
-            resourceId: editingResourceId.value,
-            resourceData: resourceData,
-          });
-          toast.success('Resursa a fost actualizată cu succes!');
-        } else {
-          await store.dispatch('library/addResource', {
-            userId: userId.value,
-            resource: {
-              ...resourceData,
-              createdAt: new Date().toISOString()
-            }
-          });
-          toast.success('Resursa a fost adăugată cu succes!');
-        }
+        await store.dispatch('library/addResource', {
+          userId: userId.value,
+          resource: {
+            ...resourceData,
+            createdAt: new Date().toISOString()
+          }
+        });
+        toast.success('Resursa a fost adăugată cu succes!');
         closeModal();
       } catch (error) {
-        toast.error(isEditing.value ? 
-          'A apărut o eroare la actualizarea resursei.' : 
-          'A apărut o eroare la adăugarea resursei.'
-        );
+        toast.error('A apărut o eroare la adăugarea resursei.');
+      }
+    }
+
+    async function updateExistingResource(resourceData) {
+      try {
+        await store.dispatch('library/updateResource', {
+          userId: userId.value,
+          resourceId: editingResourceId.value,
+          resourceData: resourceData,
+        });
+        toast.success('Resursa a fost actualizată cu succes!');
+        closeModal();
+        loadResources()
+      } catch (error) {
+        toast.error('A apărut o eroare la actualizarea resursei.');
+      }
+    }
+
+    async function handleSubmit(resourceData) {
+      if (isEditing.value) {
+        await updateExistingResource(resourceData);
+      } else {
+        await saveResource(resourceData);
       }
     }
 
@@ -262,7 +253,7 @@ export default {
         await loadResources();
 
       if (categories.value.length > 0) {
-          setCategory(categories.value[0])
+        setCategory(categories.value[0])
       }
     })
 
@@ -288,110 +279,191 @@ export default {
 </script>
 
 <style scoped>
+.digital-library {
+  width: 95%;
+  max-width: 1200px;
+  min-height: 500px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background-color: #fffefece;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
 .action-buttons {
   display: flex;
-  gap: 10px;
+  gap: 0.625rem;
+  flex-wrap: wrap;
 }
 
 .action-buttons button {
   background-color: #998a572d;
   border: none;
-}
-
-.resource-title {
-  display: flex;
-}
-
-.digital-library {
-  min-width: 600px;
-  max-height: 400px;
-  margin: 0 auto;
-  padding: 40px;
-  background-color: #f9f1d0b6;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  overflow-x: scroll;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
 }
 
 .category-selector {
   display: flex;
   justify-content: center;
   flex-wrap: wrap;
-  margin-bottom: 20px;
-  gap: 10px;
+  gap: 0.625rem;
+  margin: 1.25rem 0;
 }
 
 .category-selector button {
-  background-color: #92e7ac;
-  font-size: 1.2rem;
+  background-color: #cecece;
+  font-size: 1rem;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  transition: background-color 0.3s ease;
 }
 
 .category-selector button.active {
-  background-color: #c156aa;
-  color: rgb(255, 255, 255);
+  background-color: #7f73bf;
+  color: #ffffff;
 }
 
 .resources-grid {
   display: grid;
-  gap: 15px;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  max-height: 400px;
+  overflow-y: scroll;
 }
 
 .resource-card {
   background-color: white;
   border-radius: 10px;
-  padding: 15px;
+  padding: 1rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s ease;
   font-family: "Sour Gummy";
 }
 
 .resource-card:hover {
-  transform: scale(1.02);
+  transform: translateY(-2px);
 }
 
 .resource-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 0.625rem;
   color: #7f73bf;
 }
 
+.resource-title {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  word-break: break-word;
+}
+
 .resource-icon {
-  font-size: 2em;
-  margin-right: 10px;
+  font-size: 1.5rem;
+  flex-shrink: 0;
 }
 
 .resource-details p {
   color: #555;
-  margin-bottom: 10px;
+  margin-bottom: 0.625rem;
+  line-height: 1.4;
 }
 
 .resource-links {
   display: flex;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 0.625rem;
 }
 
 .resource-links a {
   text-decoration: none;
   color: #2980b9;
   background-color: #f1f1f1;
-  padding: 5px 10px;
+  padding: 0.5rem 1rem;
   border-radius: 15px;
   font-size: 0.9em;
+  transition: background-color 0.3s ease;
+}
+
+.resource-links a:hover {
+  background-color: #e4e4e4;
 }
 
 .add-resource-btn {
-  margin-left: 40%;
-  margin-bottom: 5%;
+  margin: 2rem auto;
+  display: block;
+  padding: 0.75rem 1.5rem;
 }
 
-.no-resources{
-  color: #513cc9;
-  font-size: 1.5em;
+.no-resources {
+  color: #4d4d4d;
+  font-size: 1.25rem;
   font-weight: 600;
   font-family: "Sour Gummy";
   text-align: center;
-  margin-bottom: 5px;
+  margin: 2.5rem auto;
+  width: 90%;
+  max-width: 600px;
+  background-color: #fff;
+  border-radius: 20px;
+  padding: 1.25rem;
+}
+
+@media screen and (max-width: 768px) {
+  .digital-library {
+    padding: 1rem;
+    margin: 1rem auto;
+    min-width: unset;
+  }
+
+  .category-selector button {
+    font-size: 0.9rem;
+    padding: 0.4rem 0.8rem;
+  }
+
+  .resources-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .resource-card {
+    padding: 0.875rem;
+  }
+
+  .resource-links {
+    flex-direction: column;
+  }
+
+  .resource-links a {
+    text-align: center;
+  }
+
+  .no-resources {
+    width: 95%;
+    font-size: 1.1rem;
+    padding: 1rem;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .digital-library {
+    padding: 0.75rem;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+  }
+
+  .category-selector {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .resource-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
 }
 </style>

@@ -18,9 +18,8 @@
       <div class="day-header" v-for="day in daysOfWeek" :key="day">{{ day }}</div>
       <div class="empty-cell" v-for="n in leadingEmptyDays" :key="'empty-' + n"></div>
       <div class="day-cell" v-for="day in calendarDays" :key="day.date"
-        :class="{ today: day.isToday, event: day.hasEvents }" @click="selectDay(day)">
-        <span v-if="day.isToday">⭐</span>
-        <span class="day-number">{{ day.date.getDate() }}</span>
+        :class="{ today: day.isToday, event: day.hasEvents }" @click="showEventsModal(day)">
+        <span class="day-number">{{ day.date.getDate() }}<span v-if="day.isToday">⭐</span></span>
         <div v-if="day.hasEvents" class="event-indicators">
           <span v-for="eventType in day.eventTypes" :key="eventType" class="event-dot"
             :style="{ backgroundColor: eventTypes[eventType] }"></span>
@@ -28,274 +27,92 @@
       </div>
     </div>
 
-    <div v-if="showModal" class="modal-overlay">
-      <div class="modal-content">
-        <h3>🎉 Evenimente pentru {{ selectedDay.date.toLocaleDateString() }}</h3>
-        <ul>
+    <button @click="showModal = true">➕ Adaugă eveniment</button>
+
+    <Modal :isOpen="showModal" :title="isEditing ? 'Editează evenimentul' : 'Adaugă eveniment'" :fields="modalFields"
+      :initialData="initialEventData" @submit="handleSubmit" @close="closeModal" />
+
+    <div v-show="eventsModal" class="eventsModal">
+      <div class="eventsContainer">
+        <ul v-if="selectedDay && selectedDay.events.length">
           <li v-for="event in selectedDay.events" :key="event.id" class="event-list-item">
-            <span class="event-dot" :style="{ backgroundColor: eventTypes[event.type] }"></span>
-            <div class="event-details">
-              <strong>{{ event.title }}</strong>
-              <p v-if="event.description">{{ event.description }}</p>
-            </div>
-            <button @click="openEditModal(event)">✏️ Modifică</button>
-            <button @click="handleDeleteEvent(event.id)">🗑️ Șterge</button>
-          </li>
-        </ul>
-        <button @click="closeModal">❌ Închide</button>
+          <strong>{{ event.title }}</strong> - {{ event.description }}
+          <div class="event-actions">
+            <button @click="updateEvent(event)">✏️</button>
+            <button @click="deleteEvent(event.id)">❌</button>
+          </div>
+        </li>
+      </ul>
+      <p v-else>Niciun eveniment pentru această zi.</p>
+      <button @click="eventsModal = false">Închide</button>
       </div>
     </div>
-
-    <div v-if="showEditModal" class="modal-overlay">
-      <div class="modal-content edit-event-modal">
-        <h3>Modifică Eveniment</h3>
-        <form @submit.prevent="handleUpdateEvent">
-          <div class="form-group">
-            <label>Titlu Eveniment</label>
-            <input v-model="editingEvent.title" placeholder="Introdu titlul evenimentului" type="text" required />
-          </div>
-
-          <div class="form-group">
-            <label>Data Evenimentului</label>
-            <input v-model="editingEvent.date" type="date" required />
-          </div>
-
-          <div class="form-group">
-            <label>Tip Eveniment</label>
-            <select v-model="editingEvent.type" required>
-              <option v-for="(color, type) in eventTypes" :key="type" :value="type">
-                {{ type }}
-              </option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>Descriere Eveniment</label>
-            <textarea v-model="editingEvent.description" placeholder="Adaugă detalii suplimentare (opțional)"
-              rows="3"></textarea>
-          </div>
-
-          <div class="form-actions">
-            <button type="submit" class="save-btn">💾 Salvează Modificările</button>
-            <button type="button" @click="closeEditModal" class="cancel-btn">❌ Anulează</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <div v-if="showAddEventModal" class="modal-overlay">
-      <div class="modal-content add-event-modal">
-        <h3>Adaugă Eveniment Nou</h3>
-        <form @submit.prevent="handleAddEvent">
-          <div class="form-group">
-            <label>Titlu Eveniment</label>
-            <input v-model="newEvent.title" placeholder="Introdu titlul evenimentului" type="text" required />
-          </div>
-
-          <div class="form-group">
-            <label>Data Evenimentului</label>
-            <input v-model="newEvent.date" type="date" required />
-          </div>
-
-          <div class="form-group">
-            <label>Tip Eveniment</label>
-            <select v-model="newEvent.type" required>
-              <option v-for="(color, type) in eventTypes" :key="type" :value="type">
-                {{ type }}
-              </option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>Descriere Eveniment</label>
-            <textarea v-model="newEvent.description" placeholder="Adaugă detalii suplimentare (opțional)"
-              rows="3"></textarea>
-          </div>
-
-          <div class="form-actions">
-            <button type="submit" class="save-btn">💾 Salvează Eveniment</button>
-            <button type="button" @click="closeAddEventModal" class="cancel-btn">❌ Anulează</button>
-          </div>
-        </form>
-      </div>
-    </div>
-    <button @click="openAddEventModal" class="add-event-btn">➕ Adaugă Eveniment</button>
   </div>
 </template>
 
 <script>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useStore } from 'vuex';
+import Modal from './Modal.vue';
+import { useToast } from 'vue-toastification';
 
 export default {
   name: 'CalendarPage',
+  components: {
+    Modal
+  },
   setup() {
     const store = useStore();
+    const toast = useToast();
     const currentDate = ref(new Date());
     const selectedDay = ref(null);
     const showModal = ref(false);
-    const showAddEventModal = ref(false);
-    const showEditModal = ref(false);
+    const isEditing = ref(false);
+    const editingEventId = ref(null);
+    const eventsModal = ref(false);
 
-    const editingEvent = ref({
-      id: null,
+    const userId = computed(() => store.getters['user/userId']);
+    const events = computed(() => store.getters['events/allEvents']);
+    const eventTypes = computed(() => store.getters['events/eventTypes']);
+    const daysOfWeek = computed(() => store.getters['events/daysOfWeek']);
+
+    const initialEventData = ref({
       title: '',
       date: '',
       type: '',
       description: ''
     });
 
-    const eventTypes = {
-      'Examen final': '#FF6B6B',
-      'Test de seminar': '#FF9800',
-      'Test parțial': '#FFC107',
-      'Colocviu': '#FF5722',
-      'Deadline proiect': '#4CAF50',
-      'Prezentare proiect': '#8BC34A',
-      'Vizită secretariat': '#E91E63',
-      'Depunere cereri': '#F44336',
-      'Întâlnire de grup': '#795548',
-      'Workshop': '#607D8B',
-      'Career fair': '#3F51B5',
-      'Concurs academic': '#FFEB3B',
-      'Voluntariat': '#4CAF50',
-      'Eveniment sportiv': '#9E9E9E'
-    };
-
-    const daysOfWeek = ['Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri', 'Sâmbătă', 'Duminică'];
-
-    const newEvent = ref({
-      title: '',
-      date: '',
-      type: Object.keys(eventTypes)[0],
-      description: ''
-    });
-
-    const formattedMonthYear = computed(() => {
-      return currentDate.value.toLocaleDateString('ro-RO', { month: 'long', year: 'numeric' });
-    });
-
-    const firstDayOfMonth = computed(() => {
-      return new Date(currentDate.value.getFullYear(), currentDate.value.getMonth(), 1);
-    });
-
-    const leadingEmptyDays = computed(() => {
-      return firstDayOfMonth.value.getDay() === 0 ? 6 : firstDayOfMonth.value.getDay() - 1;
-    });
-
-    const events = computed(() => store.getters['events/allEvents']);
-
-
-    const calendarDays = computed(() => {
-      const days = [];
-      const month = currentDate.value.getMonth();
-      const year = currentDate.value.getFullYear();
-      const today = new Date();
-      const lastDay = new Date(year, month + 1, 0).getDate();
-
-      for (let i = 1; i <= lastDay; i++) {
-        const date = new Date(year, month, i);
-        const isToday = date.toDateString() === today.toDateString();
-
-        const dayEvents = events.value?.filter((event) => {
-          if (!event?.date) return false;
-          const eventDate = new Date(event.date);
-          return eventDate.toDateString() === date.toDateString();
-        }) || [];
-
-        const eventTypes = [...new Set(dayEvents.map(event => event?.type).filter(Boolean))];
-
-        days.push({
-          date,
-          isToday,
-          hasEvents: dayEvents.length > 0,
-          events: dayEvents,
-          eventTypes
-        });
+    const modalFields = computed(() => [
+      {
+        id: 'title',
+        type: 'text',
+        label: 'Titlu Eveniment',
+        required: true
+      },
+      {
+        id: 'date',
+        label: 'Data Evenimentului',
+        type: 'date',
+        required: true
+      },
+      {
+        id: 'type',
+        label: 'Tip Eveniment',
+        type: 'select',
+        options: Object.keys(store.getters['events/eventTypes']).map(eventType => ({
+          value: eventType,
+          label: eventType
+        })),
+        required: true
+      },
+      {
+        id: 'description',
+        label: 'Descriere Eveniment',
+        type: 'textarea',
+        placeholder: 'Adaugă detalii suplimentare (opțional)'
       }
-
-      return days;
-    });
-
-    const openAddEventModal = () => {
-      newEvent.value.date = currentDate.value.toISOString().split('T')[0];
-      showAddEventModal.value = true;
-    };
-
-    const closeAddEventModal = () => {
-      showAddEventModal.value = false;
-      newEvent.value = {
-        title: '',
-        date: '',
-        type: Object.keys(eventTypes)[0],
-        description: ''
-      };
-    };
-
-    const handleAddEvent = async () => {
-      if (newEvent.value.title && newEvent.value.date) {
-        const eventData = {
-          id: Date.now(),
-          title: newEvent.value.title,
-          date: new Date(newEvent.value.date),
-          type: newEvent.value.type,
-          description: newEvent.value.description
-        };
-        store.commit('events/ADD_EVENT', eventData);
-        closeAddEventModal();
-
-        try {
-          await store.dispatch('events/addEvent', eventData);
-        } catch (error) {
-          store.commit('events/DELETE_EVENT', eventData.id);
-        }
-      }
-    };
-
-    watch(() => store.getters['events/allEvents'], () => {
-      currentDate.value = new Date(currentDate.value);
-    }, { deep: true });
-
-    const openEditModal = (event) => {
-      editingEvent.value = {
-        id: event.id,
-        title: event.title,
-        date: new Date(event.date).toISOString().split('T')[0],
-        type: event.type,
-        description: event.description
-      };
-      showEditModal.value = true;
-    };
-
-    const closeEditModal = () => {
-      showEditModal.value = false;
-      editingEvent.value = {
-        id: null,
-        title: '',
-        date: '',
-        type: '',
-        description: ''
-      };
-    };
-
-    const handleUpdateEvent = async () => {
-      const updatedEventData = {
-        id: editingEvent.value.id,
-        title: editingEvent.value.title,
-        date: new Date(editingEvent.value.date),
-        type: editingEvent.value.type,
-        description: editingEvent.value.description
-      };
-
-      await store.dispatch('events/updateEvent', updatedEventData);
-      closeEditModal();
-      showModal.value = false;
-    };
-
-    const handleDeleteEvent = async (eventId) => {
-      await store.dispatch('events/deleteEvent', eventId);
-      showModal.value = false;
-    };
+    ]);
 
     const prevMonth = () => {
       currentDate.value = new Date(
@@ -311,22 +128,139 @@ export default {
         currentDate.value.getMonth() + 1,
         1
       );
-    };
+    }
 
-    const selectDay = (day) => {
-      if (day.hasEvents) {
-        selectedDay.value = day;
-        showModal.value = true;
+
+    const formattedMonthYear = computed(() => {
+      return currentDate.value.toLocaleDateString('ro-RO', {
+        month: 'long',
+        year: 'numeric'
+      });
+    });
+
+    const firstDayOfMonth = computed(() => {
+      return new Date(currentDate.value.getFullYear(), currentDate.value.getMonth(), 1);
+    });
+
+    const leadingEmptyDays = computed(() => {
+      return firstDayOfMonth.value.getDay() === 0 ? 6 : firstDayOfMonth.value.getDay() - 1;
+    });
+
+    const calendarDays = computed(() => {
+      const days = [];
+      const month = currentDate.value.getMonth();
+      const year = currentDate.value.getFullYear();
+      const today = new Date();
+      const lastDay = new Date(year, month + 1, 0).getDate();
+
+      for (let i = 1; i <= lastDay; i++) {
+        const date = new Date(year, month, i);
+        const isToday = date.toDateString() === today.toDateString();
+
+        const dayEvents = events.value?.filter((event) => {
+          if (!event?.date) return false;
+          const eventDate = new Date(event.date);
+          console.log(eventDate.toDateString(), date.toDateString())
+          return eventDate.toDateString() === date.toDateString();
+        }) || [];
+
+        const eventTypesForDay = dayEvents.map(event => event.type);
+
+        days.push({
+          date,
+          isToday,
+          hasEvents: dayEvents.length > 0,
+          events: dayEvents,
+          eventTypes:eventTypesForDay
+        });
       }
-    };
+
+      return days;
+    });
+
+    function showEventsModal(day) {
+      selectedDay.value = day;
+      eventsModal.value = true;
+    }
 
     const closeModal = () => {
       showModal.value = false;
-      selectedDay.value = null;
+      isEditing.value = false;
+      editingEventId.value = null;
     };
 
-    onMounted(() => {
-      store.dispatch('events/fetchEvents', store.getters['user/userId']);
+    async function loadEvents() {
+      if (!userId.value) return;
+      try {
+        await store.dispatch('events/fetchEvents', userId.value);
+      } catch (error) {
+        console.error('Failed to fetch events:', error);
+      }
+    }
+
+    async function saveEvent(eventData) {
+      try {
+        await store.dispatch('events/addEvent', {
+          userId: userId.value,
+          event: {
+            ...eventData,
+            createdAt: new Date().toISOString()
+          }
+        });
+        toast.success('Evenimentul a fost adăugat cu succes!');
+        closeModal();
+      } catch (error) {
+        toast.error('A apărut o eroare la adăugarea evenimentului.');
+      }
+    }
+
+    function updateEvent(event) {
+      isEditing.value = true;
+      initialEventData.value = { ...event };
+      showModal.value = true;
+      eventsModal.value=false;
+    }
+
+    async function updateExistingEvent(eventId,eventData) {
+      try {
+        await store.dispatch('events/updateEvent', {
+          userId: userId.value,
+          eventId:eventId,
+          eventData: eventData
+        });
+        toast.success('Evenimentul a fost actualizat cu succes!');
+        closeModal();
+        loadEvents();
+      } catch (error) {
+        toast.error('A apărut o eroare la actualizarea evenimentului.');
+      }
+    }
+
+    const handleSubmit = (eventData) => {
+      if (isEditing.value) {
+        updateExistingEvent(eventData.id, eventData);
+      } else {
+        saveEvent(eventData);
+      }
+    };
+
+    async function deleteEvent(eventId) {
+      if(!confirm('Ești sigur că vrei să ștergi acest eveniment?')) return;
+      try {
+        await store.dispatch('events/deleteEvent', {
+          userId: userId.value,
+          eventId
+        });
+        toast.success('Evenimentul a fost șters cu succes!');
+        eventsModal.value=false;
+      } catch (error) {
+        toast.error('A apărut o eroare la ștergerea evenimentului.');
+      }
+    }
+
+    onMounted(async () => {
+      if (userId.value)
+        await loadEvents();
     });
 
     return {
@@ -337,22 +271,22 @@ export default {
       prevMonth,
       nextMonth,
       selectedDay,
-      selectDay,
-      closeModal,
       showModal,
+      closeModal,
+      Modal,
       eventTypes,
       events,
-      newEvent,
-      handleAddEvent,
-      showAddEventModal,
-      openAddEventModal,
-      closeAddEventModal,
-      handleDeleteEvent,
-      openEditModal,
-      showEditModal,
-      editingEvent,
-      closeEditModal,
-      handleUpdateEvent,
+      initialEventData,
+      modalFields,
+      handleSubmit,
+      saveEvent,
+      updateEvent,
+      updateExistingEvent,
+      deleteEvent,
+      loadEvents,
+      isEditing,
+      showEventsModal,
+      eventsModal,
     };
   },
 };
@@ -360,14 +294,15 @@ export default {
 
 <style scoped>
 .calendar-container {
-  width: fit-content;
-  height: 700px;
+  width: 95%;
+  max-width: 1000px;
+  min-height: 500px;
   margin: 20px auto;
   font-family: 'Segoe UI', sans-serif;
   text-align: center;
-  background-color: #f9f1d0b6;
+  background-color: #fffefece;
   border-radius: 10px;
-  padding: 20px;
+  padding: 50px;
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
 }
 
@@ -388,12 +323,14 @@ export default {
   align-items: center;
   gap: 5px;
   font-size: 0.9em;
+  margin: 5px;
 }
 
 .legend-dot {
   width: 12px;
   height: 12px;
   border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .event-dot {
@@ -402,6 +339,7 @@ export default {
   height: 8px;
   border-radius: 50%;
   margin-right: 5px;
+  flex-shrink: 0;
 }
 
 .event-indicators {
@@ -414,26 +352,23 @@ export default {
   transform: translateX(-50%);
 }
 
-.event-list-item {
-  display: flex;
-  align-items: center;
-  margin-bottom: 5px;
-}
-
 .add-event-section {
   margin-top: 20px;
+  width: 100%;
 }
 
 .add-event-form {
   background-color: #f0f0f0;
   border-radius: 8px;
-  padding: 20px;
+  padding: 15px;
   margin-top: 10px;
 }
 
 .form-actions {
   display: flex;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .calendar-header {
@@ -443,6 +378,7 @@ export default {
   margin-bottom: 20px;
   color: #333;
   font-weight: bold;
+  padding: 0 10px;
 }
 
 .calendar-grid {
@@ -455,15 +391,15 @@ export default {
   font-weight: bold;
   text-transform: uppercase;
   font-size: 0.9em;
-  background-color: #90caf9;
-  color: white;
+  background-color: #fac9ff;
+  color: rgb(0, 0, 0);
   padding: 5px;
   border-radius: 5px;
 }
 
 .day-cell {
   border: 1px solid #ddd;
-  padding: 10px;
+  padding: 8px 5px;
   position: relative;
   text-align: center;
   cursor: pointer;
@@ -480,17 +416,16 @@ export default {
 }
 
 .day-cell.today {
-  background-color: #ffc107ce;
+  background-color: #c097dd;
   font-weight: bold;
-  color: rgb(49, 126, 80);
+  color: rgb(255, 255, 255);
 }
 
 .day-cell.event {
-  background-color: #e8f5e9;
-  border-color: #4caf50;
+  background-color: #ebffe2;
 }
 
-.modal-overlay {
+.eventsModal {
   position: fixed;
   top: 0;
   left: 0;
@@ -500,24 +435,115 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 100;
+  z-index: 1000;
+  padding: 15px;
 }
 
-.modal-content {
-  background-color: #fff;
+.eventsContainer {
+  background-color: white;
   padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.2);
-  max-width: 400px;
-  width: 100%;
-  text-align: left;
-  position: relative;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.modal-content .form-group{
-  margin-top: 10px;
+.eventsContainer ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.event-list-item {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 5px;
+  padding: 8px;
+  flex-wrap: wrap;
   gap: 10px;
+}
+
+.event-actions {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+@media screen and (max-width: 768px) {
+  .calendar-container {
+    padding: 10px;
+    margin: 10px auto;
+  }
+
+  .calendar-grid {
+    gap: 3px;
+  }
+
+  .day-cell {
+    padding: 5px 2px;
+    font-size: 0.9em;
+  }
+
+  .day-header {
+    font-size: 0.8em;
+    padding: 3px;
+  }
+
+  .event-legend {
+    padding: 5px;
+  }
+
+  .event-indicators {
+    gap: 2px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .calendar-container {
+    width: 98%;
+    padding: 5px;
+  }
+
+  .calendar-header {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .day-cell {
+    font-size: 0.8em;
+  }
+
+  .event-legend {
+    font-size: 0.8em;
+  }
+
+  .eventsContainer {
+    padding: 15px;
+    width: 95%;
+  }
+
+  .event-list-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .event-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+@media screen and (max-width: 360px) {
+  .day-header {
+    font-size: 0.7em;
+  }
+
+  .day-cell {
+    font-size: 0.7em;
+    padding: 3px 1px;
+  }
 }
 </style>

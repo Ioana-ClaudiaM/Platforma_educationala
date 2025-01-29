@@ -90,7 +90,7 @@ export default {
 
 <style scoped>
 .calendar-summary-card {
-    background: white;
+    background: rgba(255, 255, 255, 0.808);
     border-radius: 16px;
     padding: 1.5rem;
     width: 100%;
@@ -109,13 +109,6 @@ export default {
     margin-bottom: 20px;
 }
 
-.view-all {
-    color: #4F46E5;
-    text-decoration: none;
-    font-size: 0.875rem;
-    font-weight: 500;
-}
-
 .events-list {
     display: flex;
     flex-direction: column;
@@ -123,13 +116,15 @@ export default {
     max-height: 200px;
     overflow-y: scroll;
     overflow-x: hidden;
+    padding: 20px;
+    font-family: 'Sour Gummy', sans-serif;
 }
 
 .event-item {
     display: flex;
     gap: 1rem;
     padding: 1rem;
-    background: #F9FAFB;
+    background: #d8d8d8;
     border-radius: 12px;
     transition: transform 0.2s ease;
 }

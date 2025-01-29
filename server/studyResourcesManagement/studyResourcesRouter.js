@@ -8,4 +8,3 @@ router.post('/deleteResource',studyResourcesService.deleteResource);
 router.post('/updateResource',studyResourcesService.updateResource);
 
 module.exports = router;
-

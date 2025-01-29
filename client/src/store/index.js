@@ -4,6 +4,7 @@ import timetableModule from './modules/timetableModule';
 import tasksModule from './modules/tasksModule';
 import libraryModule from './modules/libraryModule';
 import eventsModule from './modules/eventsModule';
+import gradesModule from './modules/gradesModule';
 
 const store = createStore({
   modules: {
@@ -12,6 +13,7 @@ const store = createStore({
     events: eventsModule,
     timetable: timetableModule,
     library:libraryModule,
+    grades:gradesModule,
   },
 });
 

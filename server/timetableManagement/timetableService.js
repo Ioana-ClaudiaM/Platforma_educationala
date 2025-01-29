@@ -3,9 +3,9 @@ const admin = require('firebase-admin');
 
 const saveSchedule = async (req, res) => {
   const { userId, schedule, startTime, hourDuration, breakDuration } = req.body;
-  
+
   try {
-    if(!userId || !schedule || !startTime || !hourDuration || !breakDuration) {
+    if (!userId || !schedule || !startTime || !hourDuration || !breakDuration) {
       return res.status(400).send({ error: 'Datele trimise nu sunt conforme sau lipsesc.' });
     }
 
@@ -17,26 +17,32 @@ const saveSchedule = async (req, res) => {
         breakDuration,
         timestamp: admin.firestore.FieldValue.serverTimestamp(),
       });
-      
+
     res.status(200).send({ message: 'Orar salvat cu succes!' });
   } catch (error) {
-    res.status(500).send({ error: 'A apărut o eroare la salvarea orarului.' + error});
+    res.status(500).send({ error: 'A apărut o eroare la salvarea orarului.' + error });
   }
 };
 
 const loadSchedule = async (req, res) => {
-  const userId = req.params.userId;
-  if(!userId) {
+  const { userId } = req.params;
+
+  if (!userId) {
     return res.status(400).send({ error: 'ID-ul utilizatorului lipsește.' });
   }
 
   try {
-    const doc = await db.collection('users').doc(userId).collection('timetables').doc('timetable').get();
-    
+    const doc = await db
+      .collection('users')
+      .doc(userId)
+      .collection('timetables')
+      .doc('timetable')
+      .get();
+
     if (!doc.exists) {
       return res.status(404).send({ message: 'Nu s-a găsit un orar pentru utilizator.' });
     }
-    
+
     const data = doc.data();
 
     res.status(200).send({
@@ -52,25 +58,24 @@ const loadSchedule = async (req, res) => {
   }
 };
 
-
 const deleteSubject = async (req, res) => {
-  const { userId, day, index } = req.body;
+  const { userId, day, index } = req.params;
 
-  if(!userId || !day || !index) { 
+  if (!userId || !day || index < 0) {
     return res.status(400).send({ error: 'Datele trimise nu sunt conforme sau lipsesc.' });
   }
   try {
-    const doc = await db.collection('users').doc(userId).collection('timetables').doc('timetable').get();
-    
-    if (!doc.exists) {
-      return res.status(404).send({ message: 'Nu s-a găsit un orar pentru utilizator.' });
-    }
+    const doc = await db.collection('users')
+    .doc(userId)
+    .collection('timetables')
+    .doc('timetable')
+    .get();
 
     const scheduleData = doc.data();
 
     if (scheduleData.schedule && scheduleData.schedule[day]) {
       scheduleData.schedule[day][index] = '';
-      
+
       await db.collection('users').doc(userId)
         .collection('timetables').doc('timetable')
         .update({

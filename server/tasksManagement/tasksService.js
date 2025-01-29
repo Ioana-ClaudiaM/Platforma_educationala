@@ -3,36 +3,36 @@ const admin = require('firebase-admin');
 
 const saveTask = async (req, res) => {
     const { userId, task, eventId } = req.body;
-    console.log('Request body:', req.body);
-    console.log('userId:', userId, 'eventId:', eventId, 'task:', task);
+    
         if (!userId || !task) {
         return res.status(400).send({ error: 'ID-ul utilizatorului sau datele task-ului lipsesc.' });
     }
     
     try {
-        const taskRef = db.collection('users').doc(userId)
-                 .collection('events').doc(eventId.toString())
-                 .collection('tasks').doc();
-
-        
-        const newTask = {
-            id: taskRef.id,  
+        const docRef = await db.collection('users')
+        .doc(userId)
+        .collection('events')
+        .doc(eventId)
+        .collection('tasks').add({
             ...task,
-            eventId,
             timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        const addedTask = {
+            ...task,
+            id: docRef.id,
         };
 
-        await taskRef.set(newTask);
-        
         res.status(200).send({
             message: 'Task-ul a fost adăugat cu succes!',
-            task: newTask
+            task: addedTask,
         });
     } catch (error) {
         res.status(500).send({ error: 'A apărut o eroare la salvarea task-ului.' });
         console.error('Eroare la salvarea task-ului:', error);
     }
 };
+
 const loadTasks = async (req, res) => {
     const { userId, eventId } = req.params;
 
@@ -41,18 +41,21 @@ const loadTasks = async (req, res) => {
     }
 
     try {
-        const tasksRef = db.collection('users').doc(userId)
-                          .collection('events').doc(eventId.toString())
-                          .collection('tasks');
+        const tasksSnapshot = await db.collection('users') 
+            .doc(userId)
+            .collection('events')
+            .doc(eventId)
+            .collection('tasks')
+            .get();
 
-        const snapshot = await tasksRef.get();
-
-        if (snapshot.empty) {
+        if (tasksSnapshot.empty) {
             return res.status(404).send({ message: 'Nu există task-uri pentru acest eveniment.' });
         }
 
-        const tasks = [];
-        snapshot.forEach((doc) => tasks.push({ id: doc.id, ...doc.data() }));
+        const tasks = tasksSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
 
         res.status(200).send({ tasks });
     } catch (error) {
@@ -61,26 +64,43 @@ const loadTasks = async (req, res) => {
     }
 };
 
-
 const updateTask = async (req, res) => {
-    const { userId, task, eventId, taskId } = req.body; 
-    console.log(userId,task,eventId,taskId)
+    const { userId, task, eventId, taskId } = req.body;
+    
+    if (!userId || !eventId || !taskId || !task) {
+        return res.status(400).send({ 
+            error: 'Datele necesare lipsesc. Este nevoie de userId, eventId, taskId și datele task-ului.' 
+        });
+    }
+
     try {
-        await db
+        const taskRef = db
             .collection('users')
             .doc(userId)
             .collection('events')
-            .doc(eventId.toString())
+            .doc(eventId)
             .collection('tasks')
-            .doc(taskId.toString())
-            .update({
-                ...task,
-                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            });
+            .doc(taskId);
+
+        const docSnapshot = await taskRef.get();
+        if (!docSnapshot.exists) {
+            return res.status(404).send({ error: 'Task-ul nu există.' });
+        }
+
+        await taskRef.update({
+            ...task,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        const updatedTask = {
+            ...task,
+            id: taskId,
+            eventId
+        };
 
         res.status(200).send({
             message: 'Task-ul a fost actualizat cu succes!',
-            updatedTask: task,
+            task: updatedTask,
         });
     } catch (error) {
         console.error('Eroare la actualizarea task-ului:', error);
@@ -91,13 +111,23 @@ const updateTask = async (req, res) => {
     }
 };
 
-
 const deleteTask = async (req, res) => {
-    const { userId, taskId } = req.body; 
-    console.log(taskId, userId);
-
+    const { userId, eventId, taskId } = req.params; 
+    
     try {
-        await db.collection('users').doc(userId).collection('tasks').doc(taskId.toString()).delete();
+        const taskRef = db.collection('users')
+            .doc(userId)
+            .collection('events')
+            .doc(eventId)
+            .collection('tasks')
+            .doc(taskId);
+            
+        const doc = await taskRef.get();
+        if (!doc.exists) {
+            return res.status(404).send({ error: 'Task-ul nu există.' });
+        }
+        
+        await taskRef.delete();
         
         res.status(200).send({ 
             message: 'Task-ul a fost șters cu succes!',
@@ -105,61 +135,50 @@ const deleteTask = async (req, res) => {
         });
     } catch (error) {
         console.error('Eroare la ștergerea task-ului:', error);
-        res.status(500).send({ 
-            error: 'A apărut o eroare la ștergerea task-ului.',
-            details: error.message 
-        });
+        res.status(500).send({ error: 'A apărut o eroare la ștergerea task-ului.' });
     }
 };
 
 const loadAllTasks = async (req, res) => {
-    const { userId } = req.params;
+    const { userId, eventId } = req.params;
 
-    if (!userId) {
-        return res.status(400).send({ error: 'userId nu este valid.' });
+    if (!userId || !eventId) {
+        return res.status(400).send({ error: 'userId sau eventId lipsesc.' });
     }
 
     try {
-        const eventsRef = db.collection('users').doc(userId)
-                          .collection('events');
-        const eventsSnapshot = await eventsRef.get();
+        const tasksRef = db.collection('users')
+            .doc(userId)
+            .collection('events')
+            .doc(eventId)
+            .collection('tasks');
 
-        if (eventsSnapshot.empty) {
-            return res.status(200).send({ tasks: [] });
+        const tasksSnapshot = await tasksRef.get();
+
+        if (tasksSnapshot.empty) {
+            return res.status(200).send({ 
+                tasks: [],
+                message: 'Nu există taskuri pentru acest eveniment.' 
+            });
         }
 
-        const allTasks = [];
-        const taskPromises = [];
+        const tasks = tasksSnapshot.docs.map(doc => ({
+            id: doc.id,
+            eventId,
+            ...doc.data()
+        }));
 
-        eventsSnapshot.forEach((eventDoc) => {
-            const eventId = eventDoc.id;
-            const tasksPromise = db.collection('users').doc(userId)
-                                 .collection('events').doc(eventId)
-                                 .collection('tasks')
-                                 .get()
-                                 .then(tasksSnapshot => {
-                                     tasksSnapshot.forEach(taskDoc => {
-                                         allTasks.push({
-                                             id: taskDoc.id,
-                                             eventId: eventId,
-                                             ...taskDoc.data()
-                                         });
-                                     });
-                                 });
-            taskPromises.push(tasksPromise);
-        });
+        return res.status(200).send({ tasks });
 
-        await Promise.all(taskPromises);
-
-        res.status(200).send({ tasks: allTasks });
     } catch (error) {
-        console.error('Eroare la încărcarea tuturor task-urilor:', error);
-        res.status(500).send({ 
+        console.error('Eroare la încărcarea task-urilor:', error);
+        return res.status(500).send({ 
             error: 'A apărut o eroare la încărcarea task-urilor.',
             details: error.message 
         });
     }
 };
+
 module.exports = {
     saveTask,
     loadTasks,

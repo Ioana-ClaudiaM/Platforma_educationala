@@ -1,7 +1,5 @@
 <template>
   <div class="education-page">
-    <h1 class="page-title">Pagina de studiu</h1>
-
     <nav class="navigation">
       <button 
         v-for="item in menuItems" 
@@ -12,11 +10,10 @@
         {{ item.name }}
       </button>
     </nav>
-
     <div class="content">
       <component :is="currentComponent" />
     </div>
-    <button @click="goToProfilePage()" class="goToProfile">Mergi pe pagina de profil</button>
+    <button @click="goToProfilePage()" class="goToProfile">Mergi pe pagina de profil 👤</button>
   </div>
 </template>
 
@@ -71,53 +68,49 @@ export default {
 
 <style scoped>
 .education-page {
-  background-image: url("../assets/4028065.jpg");
+  background-image: url("../assets/workplace-items-arrangement-flat-lay.jpg");
   background-position: center;
   background-size: cover;
-  padding: 20px;
+  background-attachment: fixed;
+  min-height: 100vh;
+  padding-top: 80px; 
+  width: 100%;
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
-  justify-content: center;
   align-items: center;
 }
 
-.page-title {
-  color: #7f73bf;
-  font-size: 2.5em;
-  font-weight: 600;
-  font-family: "Sour Gummy";
-  background-color: #ffffffe9;
-  text-align: center;
-  border-radius: 20px;
-  padding: 5px;
-  margin-bottom: 2rem;
+.navigation {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background-color: #ffffff;
+  padding: 15px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
-nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  justify-content: center;
-  max-width: 80%;
-  margin: 0 auto; 
-  background-color: #fff;
-  padding: 20px;
-  border-radius: 20px;
-}
 .nav-button {
   padding: 10px 20px;
-  background-color: #faebb1;
+  background-color: #cecece;
   border: none;
   border-radius: 10px;
   cursor: pointer;
   font-family: "Sour Gummy";
-  transition: background-color 0.3s;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+  min-width: 120px;
 }
 
 .nav-button:hover {
   background-color: #7f73bf;
   color: white;
+  transform: translateY(-2px);
 }
 
 .nav-button.active {
@@ -126,24 +119,97 @@ nav {
 }
 
 .content {
-  padding: 0;
+  width: 100%;
+  max-width: 1200px;
+  margin: 20px auto;
+  padding: 0 20px;
+  display: flex;
+  justify-content: center;
   flex: 1;
-  margin-top: 20px;
 }
 
-.goToProfile{
-width: fit-content;
-font-size: 1.2rem;
-margin-top: 20px;
+.page-title {
+  color: #7f73bf;
+  font-size: 2.5em;
+  font-weight: 600;
+  font-family: "Sour Gummy";
+  background-color: #ffffffaf;
+  text-align: center;
+  border-radius: 20px;
+  padding: 10px 20px;
+  margin: 20px 0;
 }
 
-@media (min-width: 1025px) {
+.goToProfile {
+  width: fit-content;
+  font-size: 1rem;
+  margin: 20px 0;
+  padding: 10px 20px;
+  border-radius: 10px;
+  background-color: #7f73bf;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.goToProfile:hover {
+  transform: translateY(-2px);
+  background-color: #6a5fa3;
+}
+
+@media (max-width: 768px) {
+  .education-page {
+    padding-top: 120px; 
+  }
+
   .navigation {
-    gap: 20px;
+    padding: 10px;
   }
 
   .nav-button {
-    font-size: 1.1em;
+    padding: 8px 15px;
+    font-size: 0.9rem;
+    min-width: 100px;
+  }
+
+  .content {
+    padding: 0 10px;
+  }
+
+  .page-title {
+    font-size: 2em;
+    padding: 8px 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .education-page {
+    padding-top: 150px; 
+  }
+
+  .navigation {
+    padding: 8px;
+  }
+
+  .nav-button {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    min-width: 80px;
+  }
+
+  .page-title {
+    font-size: 1.5em;
+    padding: 6px 12px;
+  }
+
+  .content {
+    padding: 0 5px;
+  }
+
+  .goToProfile {
+    font-size: 0.9rem;
+    padding: 8px 15px;
   }
 }
 </style>

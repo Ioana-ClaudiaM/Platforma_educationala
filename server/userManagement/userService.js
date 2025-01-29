@@ -2,7 +2,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const db = require('../database/dbInit'); 
 
-const JWT_SECRET = process.env.JWT_SECRET || 'DigitalJournal12112024';
+const JWT_SECRET = process.env.JWT_SECRET;;
 
 const getAllUsers = (req, res) => {
     res.send('you want to get all users');
@@ -18,7 +18,7 @@ const registerUser = async (req, res) => {
 
         res.status(201).json({ id: addedUser.id, email });
     } catch (error) {
-        res.status(500).send(JSON.stringify(error));
+        res.status(500).send({error: error.message});
     }
 };
 
@@ -56,6 +56,7 @@ const generateToken = (user) => {
       const user = { id: userDoc.id, ...userDoc.data() };
 
       const isPasswordValid = await bcrypt.compare(password, user.password);
+
       if (!isPasswordValid) {
         return res.status(401).json({ message: 'Parolă incorectă' });
       }

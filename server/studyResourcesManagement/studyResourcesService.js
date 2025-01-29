@@ -14,6 +14,7 @@ const getUserResources = async (req, res) => {
     snapshot.forEach(doc => {
       resources.push({ id: doc.id, ...doc.data() });
     });
+    
     return res.status(200).json(resources);
   } catch (error) {
     console.error('Error retrieving resources:', error);

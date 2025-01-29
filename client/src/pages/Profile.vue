@@ -40,7 +40,7 @@ export default {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background-image: url(../assets/4028065.jpg);
+  background-image: url(../assets/top-view-workplace-items-arrangement.jpg);
   background-position:center;
   background-size: cover;
   padding: 5% 0%;
@@ -59,16 +59,17 @@ export default {
   font-weight: bold;
   transition: transform 0.3s ease, color 0.3s ease;
   font-size: 30px;
-  color: rgb(167, 154, 253);
-  background-color: #ffffffe9;
+  color: rgb(78, 69, 136);
+  background-color: #ffffff;
   border-radius: 20px;
   width: fit-content;
   padding: 20px;
+  margin-top: 40px;
 }
 
 .profile h1:hover {
   transform: scale(1.05);
-  color: rgb(86, 177, 212);
+  color: rgb(196, 144, 255);
 }
 
 .content {

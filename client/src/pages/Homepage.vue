@@ -2,10 +2,10 @@
     <div class="homepage">
       <Navbar class="navbar" />
       
-      <div class="hero-section">
-        <div class="hero-content">
+      <div class="main-section">
+        <div class="main-content">
           <h1 class="main-title">Învață mai eficient.<br>Organizează-ți studiul.<br>Reușește mai ușor.</h1>
-          <p class="hero-subtitle">Platforma educațională care te ajută să-ți organizezi studiul și să-ți atingi obiectivele mai ușor.</p>
+          <p class="main-subtitle">Platforma educațională care te ajută să-ți organizezi studiul și să-ți atingi obiectivele mai ușor.</p>
           <div class="cta-buttons">
             <button @click="navigateTo('signup')" class="primary-button">Începe Gratuit</button>
             <button @click="navigateTo('login')" class="secondary-button">Am cont deja</button>
@@ -105,16 +105,16 @@
     min-height: 100vh;
   }
   
-  .hero-section {
+  .main-section {
     min-height: 80vh;
     display: flex;
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding: 2rem;
+    padding: 3.8rem;
   }
   
-  .hero-content {
+  .main-content {
     background-color: rgba(255, 255, 255, 0.85);
     padding: 3rem;
     border-radius: 20px;
@@ -129,7 +129,7 @@
     line-height: 1.2;
   }
   
-  .hero-subtitle {
+  .main-subtitle {
     font-size: 1.2rem;
     color: #666;
     margin-bottom: 2rem;
@@ -291,10 +291,13 @@
   
   @media (max-width: 768px) {
     .main-title {
-      font-size: 2rem;
+      font-size: 1.6rem;
     }
     
-    .hero-content {
+    .main-section{
+      margin-top: 80px;
+    }
+    .main-content {
       padding: 2rem;
     }
     

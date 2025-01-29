@@ -5,6 +5,7 @@ const toast= useToast();
 
 export function authGuard(to, from, next) {
   const token = localStorage.getItem('user_token');
+
   if (!token) {
     toast.error('Trebuie să fii autentificat pentru a accesa această pagină');
     next('/login');

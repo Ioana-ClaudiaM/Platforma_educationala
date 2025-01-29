@@ -55,11 +55,9 @@ export default {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!email.value) {
         emailError.value = 'Email-ul este obligatoriu';
-        toast.error("Email-ul este obligatoriu!");
         return false;
       } else if (!emailRegex.test(email.value)) {
         emailError.value = 'Introdu o adresă de email validă';
-        toast.warning("Adresa de email nu este validă!");
         return false;
       } else {
         emailError.value = '';
@@ -70,11 +68,9 @@ export default {
     const validatePassword = () => {
       if (!password.value) {
         passwordError.value = 'Parola este obligatorie';
-        toast.error("Parola este obligatorie!");
         return false;
       } else if (password.value.length < 8) {
         passwordError.value = 'Parola trebuie să aibă minimum 8 caractere';
-        toast.warning("Parola trebuie să aibă minimum 8 caractere!");
         return false;
       } else {
         passwordError.value = '';
@@ -82,7 +78,7 @@ export default {
       }
     };
 
-    const submitForm = () => {
+    async function submitForm(){
       loginError.value = '';
 
       if (isFormValid.value && !isSubmitting.value) {
@@ -93,35 +89,24 @@ export default {
           password: password.value,
         };
 
-        axios.post('http://localhost:8000/login', formData)
-          .then(response => {
-            localStorage.setItem('user_token', response.data.token);
-            localStorage.setItem('user_info', JSON.stringify(response.data.user));
-            axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
-            store.dispatch('user/setUser', response.data.user);
-            toast.success("Autentificare reușită! Bine ai venit!");
-            router.push('/profile');
-          })
-
-          .catch(error => {
-            if (error.response) {
-              loginError.value = error.response.data.message || 'Eroare la autentificare';
-              toast.error(error.response.data.message || 'Eroare la autentificare');
-            } else if (error.request) {
-              loginError.value = 'Nu s-a putut stabili conexiunea cu serverul';
-              toast.error('Nu s-a putut stabili conexiunea cu serverul');
-            } else {
-              loginError.value = 'A apărut o eroare neașteptată';
-              toast.error('A apărut o eroare neașteptată');
-            }
-          })
-          .finally(() => {
-            isSubmitting.value = false;
-          });
-      } else {
-        toast.info("Te rugăm să completezi toate câmpurile corect!");
+        try{
+          const response = await axios.post('http://localhost:8000/login', formData);
+          localStorage.setItem('user_token', response.data.token);
+          localStorage.setItem('user_info', JSON.stringify(response.data.user));
+          axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
+          store.dispatch('user/setUser', response.data.user);
+          toast.success("Autentificare reușită! Bine ai venit!");
+          router.push('/profile');
+        } catch (error) {
+          const errors = error.response.data.errors;
+          for(error of errors){
+            toast.error(error.msg);
+          }
+        } finally {
+          isSubmitting.value = false;
+        }
       }
-    };
+    }
 
     return {
       email,

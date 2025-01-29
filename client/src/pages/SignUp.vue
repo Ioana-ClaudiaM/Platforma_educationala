@@ -96,15 +96,12 @@ export default {
     const validateUsername = () => {
       if (!username.value) {
         usernameError.value = 'Numele de utilizator este obligatoriu';
-        toast.error("Numele de utilizator este obligatoriu!");
         return false;
       } else if (username.value.length < 3) {
         usernameError.value = 'Numele de utilizator trebuie să aibă minimum 3 caractere';
-        toast.warning("Numele de utilizator trebuie să aibă minimum 3 caractere");
         return false;
       } else if (!/^[a-zA-Z0-9_]+$/.test(username.value)) {
         usernameError.value = 'Numele de utilizator poate conține doar litere, cifre și under score';
-        toast.warning("Numele de utilizator poate conține doar litere, cifre și under score");
         return false;
       } else {
         usernameError.value = '';
@@ -116,11 +113,9 @@ export default {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!email.value) {
         emailError.value = 'Email-ul este obligatoriu';
-        toast.error("Email-ul este obligatoriu!");
         return false;
       } else if (!emailRegex.test(email.value)) {
         emailError.value = 'Introdu o adresă de email validă';
-        toast.warning("Adresa de email nu este validă!");
         return false;
       } else {
         emailError.value = '';
@@ -131,15 +126,12 @@ export default {
     const validatePassword = () => {
       if (!password.value) {
         passwordError.value = 'Parola este obligatorie';
-        toast.error("Parola este obligatorie!");
         return false;
       } else if (password.value.length < 8) {
         passwordError.value = 'Parola trebuie să aibă minimum 8 caractere';
-        toast.warning("Parola trebuie să aibă minimum 8 caractere");
         return false;
       } else if (!/(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])/.test(password.value)) {
         passwordError.value = 'Parola trebuie să conțină literă mare, literă mică, cifră și un caracter special';
-        toast.warning("Parola trebuie să conțină literă mare, literă mică, cifră și un caracter special");
         return false;
       } else {
         passwordError.value = '';
@@ -160,7 +152,7 @@ export default {
       }
     };
 
-    const submitForm = () => {
+    async function submitForm() {
       if (isFormValid.value && !isSubmitting.value) {
         isSubmitting.value = true;
 
@@ -170,26 +162,20 @@ export default {
           password: password.value,
         };
 
-        axios.post('http://localhost:8000/register', formData)
-          .then((response) => {
-            toast.success("Contul a fost creat cu succes pentru utilizatorul cu emailul "+response.data.email);
-            router.push('/login');
-          })
-          .catch(error => {
-            const errors = error.response.data.errors;
-            console.log(errors)
-            errors.forEach((error) => {
-              toast.error(`${error.msg}`);
-            });
-          })
-          .finally(() => {
-            isSubmitting.value = false;
+        try{
+          const response = await axios.post('http://localhost:8000/register', formData);
+          toast.success("Contul a fost creat cu succes pentru utilizatorul cu emailul "+response.data.email);
+          router.push('/login');
+        } catch (error) {
+          const errors = error.response.data.errors;
+          errors.forEach((error) => {
+            toast.error(`${error.msg}`);
           });
+        } finally {
+          isSubmitting.value = false;
+        }
       }
-      else{
-        toast.info("Te rugăm să completezi toate câmpurile corect!");
-      }
-    };
+    }
 
     return {
       username,
