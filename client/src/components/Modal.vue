@@ -84,7 +84,7 @@ export default {
     title: String,
     fields: Array,
     initialData: {
-      type: Object, 
+      type: Object,
       default: () => ({})
     },
   },
@@ -116,7 +116,7 @@ export default {
       if (!formData.value[fieldId]) {
         formData.value[fieldId] = []
       }
-      formData.value[fieldId].push({ ...defaultItem })
+      formData.value[fieldId] = [...formData.value[fieldId], { ...defaultItem }]
     }
 
     const removeArrayItem = (fieldId, index) => {

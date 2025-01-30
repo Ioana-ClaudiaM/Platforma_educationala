@@ -92,7 +92,9 @@ export default {
         type: 'text',
         label: 'Titlu',
         required: true,
-        placeholder: 'Introdu titlul resursei'
+        placeholder: 'Introdu titlul resursei',
+        min: 3,
+        max: 50,
       },
       {
         id: 'type',
@@ -126,7 +128,9 @@ export default {
         label: 'Descriere',
         required: true,
         placeholder: 'Introdu descrierea resursei',
-        rows: 4
+        rows: 4,
+        min: 10,
+        max: 500
       },
       {
         id: 'links',
@@ -162,14 +166,17 @@ export default {
       isEditing.value = false;
       editingResourceId.value = null;
 
-      initialResourceData.value = {
-        title: '',
-        type: '',
-        category: '',
-        description: '',
-        links: []
-      };
+      if (!isEditing.value) {
+        initialResourceData.value = {
+          title: '',
+          type: '',
+          category: '',
+          description: '',
+          links: []
+        };
+      }
     }
+
 
     function getResourceTypeIcon(type) {
       return resourceTypes.value[type] || '📁'
@@ -221,7 +228,10 @@ export default {
         toast.success('Resursa a fost adăugată cu succes!');
         closeModal();
       } catch (error) {
-        toast.error('A apărut o eroare la adăugarea resursei.');
+        const errors = error.response.data.errors;
+        for (const error of errors) {
+          toast.error(error.msg);
+        }
       }
     }
 
@@ -236,7 +246,10 @@ export default {
         closeModal();
         loadResources()
       } catch (error) {
-        toast.error('A apărut o eroare la actualizarea resursei.');
+        const errors = error.response.data.errors;
+        for (const error of errors) {
+          toast.error(error.msg);
+        }
       }
     }
 

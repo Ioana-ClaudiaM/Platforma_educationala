@@ -2,10 +2,10 @@ const db = require('../database/dbInit');
 const admin = require('firebase-admin');
 
 const saveTask = async (req, res) => {
-    const { userId, task, eventId } = req.body;
+    const { userId, title, description, dueDate,status , eventId } = req.body;
     
-        if (!userId || !task) {
-        return res.status(400).send({ error: 'ID-ul utilizatorului sau datele task-ului lipsesc.' });
+        if (!userId) {
+        return res.status(400).send({ error: 'ID-ul utilizatorului lipseste.' });
     }
     
     try {
@@ -14,12 +14,18 @@ const saveTask = async (req, res) => {
         .collection('events')
         .doc(eventId)
         .collection('tasks').add({
-            ...task,
+            title,
+            description,
+            dueDate,
+            status,
             timestamp: admin.firestore.FieldValue.serverTimestamp(),
         });
 
         const addedTask = {
-            ...task,
+            title,
+            description,
+            dueDate,
+            status,
             id: docRef.id,
         };
 
@@ -65,11 +71,11 @@ const loadTasks = async (req, res) => {
 };
 
 const updateTask = async (req, res) => {
-    const { userId, task, eventId, taskId } = req.body;
+    const { userId, title, description, dueDate,status, eventId, taskId } = req.body;
     
-    if (!userId || !eventId || !taskId || !task) {
+    if (!userId) {
         return res.status(400).send({ 
-            error: 'Datele necesare lipsesc. Este nevoie de userId, eventId, taskId și datele task-ului.' 
+            error: 'ID-ul utilizatorului lipsește.' 
         });
     }
 
@@ -88,12 +94,18 @@ const updateTask = async (req, res) => {
         }
 
         await taskRef.update({
-            ...task,
+            title,
+            description,
+            dueDate,
+            status,
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
 
         const updatedTask = {
-            ...task,
+            title,
+            description,
+            dueDate,
+            status,
             id: taskId,
             eventId
         };

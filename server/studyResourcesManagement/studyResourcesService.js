@@ -9,12 +9,12 @@ const getUserResources = async (req, res) => {
       .doc(userId)
       .collection('resources')
       .get();
-    
+
     const resources = [];
     snapshot.forEach(doc => {
       resources.push({ id: doc.id, ...doc.data() });
     });
-    
+
     return res.status(200).json(resources);
   } catch (error) {
     console.error('Error retrieving resources:', error);
@@ -23,8 +23,8 @@ const getUserResources = async (req, res) => {
 };
 
 const addResource = async (req, res) => {
-  const { userId, resource } = req.body;
-  
+  const { userId, title, type, category, description, links } = req.body;
+  console.log(links, userId, title, type, category, description)
   if (!userId) {
     return res.status(400).json({ message: 'User ID is required' });
   }
@@ -35,13 +35,21 @@ const addResource = async (req, res) => {
       .doc(userId)
       .collection('resources')
       .add({
-        ...resource,
+        title,
+        type,
+        category,
+        description,
+        links,
         timestamp: admin.firestore.FieldValue.serverTimestamp(),
       });
 
     const addedResource = {
       id: docRef.id,
-      ...resource,
+      title,
+      type,
+      category,
+      description,
+      links,
     };
 
     return res.status(200).json({
@@ -55,7 +63,8 @@ const addResource = async (req, res) => {
 };
 
 const deleteResource = async (req, res) => {
-  const {resourceId,userId} = req.body;
+  const { resourceId, userId } = req.params;
+  console.log(resourceId, userId)
 
   if (!userId) {
     return res.status(400).json({ message: 'User ID is required' });
@@ -81,8 +90,7 @@ const deleteResource = async (req, res) => {
 }
 
 const updateResource = async (req, res) => {
-const { userId, resourceId, resourceData } = req.body;
-console.log(resourceId,resourceData)
+  const { userId, resourceId, title, type, category, description, links } = req.body;
 
   if (!userId) {
     return res.status(400).json({ message: 'User ID is required' });
@@ -93,13 +101,23 @@ console.log(resourceId,resourceData)
   }
 
   try {
-    await db
-      .collection('users')
-      .doc(userId)
-      .collection('resources')
-      .doc(resourceId)
-      .update(resourceData);
+    const docRef = db.collection('users').doc(userId).collection('resources').doc(resourceId);
+    const doc = await docRef.get();
+
+    if (!doc.exists) {
+      return res.status(404).json({ message: 'Resursa nu există!' });
+    }
+
+    await docRef.update({
+      title,
+      type,
+      category,
+      description,
+      links
+    });
+
     return res.status(200).json({ message: 'Resource updated successfully!' });
+
   } catch (error) {
     console.error('Error updating resource:', error);
     return res.status(500).json({ message: 'Error updating resource' });

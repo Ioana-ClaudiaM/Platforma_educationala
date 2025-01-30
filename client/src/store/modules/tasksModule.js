@@ -22,10 +22,16 @@ const tasksModule = {
     },
     UPDATE_TASK(state, updatedTask) {
       const index = state.eventTasks.findIndex(task => task.id === updatedTask.id);
-      if (index !== -1) state.eventTasks[index] = updatedTask;
-
+      if (index !== -1) {
+        state.eventTasks.splice(index, 1, updatedTask);
+      }
+      
       const allIndex = state.allTasks.findIndex(task => task.id === updatedTask.id);
-      if (allIndex !== -1) state.allTasks[allIndex] = updatedTask;
+      if (allIndex !== -1) {
+        state.allTasks.splice(allIndex, 1, updatedTask);
+      } else {
+        state.allTasks.push(updatedTask);
+      }
     },
     DELETE_TASK(state, taskId) {
       state.eventTasks = state.eventTasks.filter(task => task.id !== taskId);
@@ -57,11 +63,12 @@ const tasksModule = {
         const response = await axios.post(`http://localhost:8000/addTask`, {
           userId,
           eventId,
-          task: taskData
+          ...taskData
         });
         commit('ADD_TASK', response.data.task);
       } catch (error) {
         console.error('Eroare la adăugarea task-ului:', error);
+        throw error;
       }
     },
 
@@ -71,11 +78,12 @@ const tasksModule = {
           taskId,
           userId,
           eventId,
-          task: taskData
+          ...taskData
         });
         commit('UPDATE_TASK', response.data.task);
       } catch (error) {
         console.error('Eroare la actualizarea task-ului:', error);
+        throw error;
       }
     },
 

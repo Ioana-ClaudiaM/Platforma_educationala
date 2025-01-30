@@ -2,20 +2,26 @@ const db = require('../database/dbInit');
 const admin = require('firebase-admin');
 
 const saveEvent = async (req, res) => {
-    const { userId, event } = req.body;
+    const { userId, title, date, type, description } = req.body;
     if (!userId) {
         return res.status(400).json({ message: 'User ID is required' });
     }
 
     try {
         const docRef = await db.collection('users').doc(userId).collection('events').add({
-            ...event,
+            title,
+            date,
+            type,
+            description,
             timestamp: admin.firestore.FieldValue.serverTimestamp(),
         });
 
         const addedEvent = {
             id: docRef.id,
-            ...event
+            title,
+            date,
+            type,
+            description,
         };
 
         res.status(200).send({
@@ -23,21 +29,16 @@ const saveEvent = async (req, res) => {
             event: addedEvent
         });
 
-        console.log(addedEvent);
     } catch (error) {
         res.status(500).send({ error: 'A apărut o eroare la salvarea evenimentului.' });
-        console.error('Eroare la salvarea evenimentului:', error);
     }
 };
 
 const updateEvent = async (req, res) => {
-    const { userId, eventId, eventData } = req.body;
-    console.log(userId, eventId, eventData);
-    if (!userId || !eventId || !eventData) {
-        return res.status(400).send({
-            error: 'Lipsesc date necesare (userId, eventId sau eventData)',
-            receivedData: { userId, eventId, eventData }
-        });
+    const { userId, eventId, title, date, type, description } = req.body;
+    
+    if(!userId){ 
+        return res.status(400).send({ error: 'ID-ul utilizatorului lipsește.' });
     }
 
     try {
@@ -55,11 +56,20 @@ const updateEvent = async (req, res) => {
             });
         }
 
-        await eventRef.update(eventData);
+        await eventRef.update({
+            title,
+            date,
+            type,
+            description,
+            timestamp: admin.firestore.FieldValue.serverTimestamp()
+        });
 
         const updatedEvent = {
             id: eventId,
-            ...eventData
+            title, 
+            date, 
+            type, 
+            description
         };
 
         res.status(200).send({
@@ -67,10 +77,8 @@ const updateEvent = async (req, res) => {
             event: updatedEvent
         });
     } catch (error) {
-        console.error('Eroare la actualizarea evenimentului:', error);
         res.status(500).send({
             error: 'A apărut o eroare la actualizarea evenimentului.',
-            details: error.message
         });
     }
 };

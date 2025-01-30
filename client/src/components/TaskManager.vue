@@ -115,7 +115,7 @@ export default {
         id: 'description',
         label: 'Descriere:',
         type: 'textarea',
-        required: true
+        required: true,
       },
       {
         id: 'dueDate',
@@ -190,7 +190,10 @@ export default {
         closeModal();
       }
       catch (error) {
-        toast.error('Nu s-a putut adăuga task-ul');
+        const errors = error.response.data.errors;
+        for(const err of errors) {
+          toast.error(err.msg);
+        }
       }
     }
 
@@ -211,8 +214,11 @@ export default {
         });
         toast.success('Task-ul a fost actualizat cu succes');
         closeModal();
-      } catch (error) {
-        toast.error('Nu s-a putut actualiza task-ul');
+      }catch (error) {
+        const errors = error.response.data.errors;
+        for(const err of errors) {
+          toast.error(err.msg);
+        }
       }
     };
 
@@ -535,7 +541,7 @@ export default {
   text-align: center;
   background: #f8f9fa;
   border-radius: 8px;
-  margin: 1rem 0;
+  margin-top: 12%;
 }
 
 .empty-state {
@@ -558,5 +564,6 @@ export default {
   margin: 0;
   color: #666;
 }
+
 
 </style>

@@ -36,15 +36,15 @@
       <div class="eventsContainer">
         <ul v-if="selectedDay && selectedDay.events.length">
           <li v-for="event in selectedDay.events" :key="event.id" class="event-list-item">
-          <strong>{{ event.title }}</strong> - {{ event.description }}
-          <div class="event-actions">
-            <button @click="updateEvent(event)">✏️</button>
-            <button @click="deleteEvent(event.id)">❌</button>
-          </div>
-        </li>
-      </ul>
-      <p v-else>Niciun eveniment pentru această zi.</p>
-      <button @click="eventsModal = false">Închide</button>
+            <strong>{{ event.title }}</strong> - {{ event.description }}
+            <div class="event-actions">
+              <button @click="updateEvent(event)">✏️</button>
+              <button @click="deleteEvent(event.id)">❌</button>
+            </div>
+          </li>
+        </ul>
+        <p v-else>Niciun eveniment pentru această zi.</p>
+        <button @click="eventsModal = false">Închide</button>
       </div>
     </div>
   </div>
@@ -88,13 +88,15 @@ export default {
         id: 'title',
         type: 'text',
         label: 'Titlu Eveniment',
-        required: true
+        required: true,
+        min: 3,
+        max: 50
       },
       {
         id: 'date',
         label: 'Data Evenimentului',
         type: 'date',
-        required: true
+        required: true,
       },
       {
         id: 'type',
@@ -110,7 +112,10 @@ export default {
         id: 'description',
         label: 'Descriere Eveniment',
         type: 'textarea',
-        placeholder: 'Adaugă detalii suplimentare (opțional)'
+        placeholder: 'Adaugă detalii suplimentare (opțional)',
+        required: true,
+        min: 3,
+        max: 200
       }
     ]);
 
@@ -160,7 +165,6 @@ export default {
         const dayEvents = events.value?.filter((event) => {
           if (!event?.date) return false;
           const eventDate = new Date(event.date);
-          console.log(eventDate.toDateString(), date.toDateString())
           return eventDate.toDateString() === date.toDateString();
         }) || [];
 
@@ -171,7 +175,7 @@ export default {
           isToday,
           hasEvents: dayEvents.length > 0,
           events: dayEvents,
-          eventTypes:eventTypesForDay
+          eventTypes: eventTypesForDay
         });
       }
 
@@ -187,6 +191,12 @@ export default {
       showModal.value = false;
       isEditing.value = false;
       editingEventId.value = null;
+      initialEventData.value = {
+        title: '',
+        date: '',
+        type: '',
+        description: ''
+      };
     };
 
     async function loadEvents() {
@@ -199,6 +209,7 @@ export default {
     }
 
     async function saveEvent(eventData) {
+      eventData.date = new Date(eventData.date).toISOString().split('T')[0];
       try {
         await store.dispatch('events/addEvent', {
           userId: userId.value,
@@ -207,32 +218,42 @@ export default {
             createdAt: new Date().toISOString()
           }
         });
+
         toast.success('Evenimentul a fost adăugat cu succes!');
         closeModal();
       } catch (error) {
-        toast.error('A apărut o eroare la adăugarea evenimentului.');
+        if (error.response?.data?.errors) {
+          error.response.data.errors.forEach(err => toast.error(err.msg));
+        } else {
+          toast.error('A apărut o eroare la adăugarea evenimentului.');
+        }
       }
     }
+
 
     function updateEvent(event) {
       isEditing.value = true;
       initialEventData.value = { ...event };
       showModal.value = true;
-      eventsModal.value=false;
+      eventsModal.value = false;
     }
 
-    async function updateExistingEvent(eventId,eventData) {
+    async function updateExistingEvent(eventId, eventData) {
+      eventData.date = new Date(eventData.date).toISOString().split('T')[0];
       try {
         await store.dispatch('events/updateEvent', {
           userId: userId.value,
-          eventId:eventId,
+          eventId: eventId,
           eventData: eventData
         });
         toast.success('Evenimentul a fost actualizat cu succes!');
+        await loadEvents();
         closeModal();
-        loadEvents();
       } catch (error) {
-        toast.error('A apărut o eroare la actualizarea evenimentului.');
+        const errors = error.response?.data?.errors;
+        for(let err of errors) {
+          toast.error(err.msg);
+        }
       }
     }
 
@@ -245,14 +266,14 @@ export default {
     };
 
     async function deleteEvent(eventId) {
-      if(!confirm('Ești sigur că vrei să ștergi acest eveniment?')) return;
+      if (!confirm('Ești sigur că vrei să ștergi acest eveniment?')) return;
       try {
         await store.dispatch('events/deleteEvent', {
           userId: userId.value,
           eventId
         });
         toast.success('Evenimentul a fost șters cu succes!');
-        eventsModal.value=false;
+        eventsModal.value = false;
       } catch (error) {
         toast.error('A apărut o eroare la ștergerea evenimentului.');
       }

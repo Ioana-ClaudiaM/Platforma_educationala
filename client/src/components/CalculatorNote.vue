@@ -12,8 +12,7 @@
 
     <div v-if="isEditModalOpen" class="modal-overlay">
       <div class="modal-content">
-        <h3>Editare Notă pentru materia {{ selectedSubject }}</h3>
-
+        <h3>{{ isEditing ? "Editare Notă" : "Adăugare Notă" }}</h3>
         <div class="weights-container">
           <div class="weight-input">
             <label>Pondere Seminar/Laborator:</label>
@@ -60,7 +59,7 @@
         </div>
 
         <div class="modal-actions">
-          <button @click="saveGrades" class="save-grades">💾 Salvează</button>
+          <button @click="handleSubmit(subject)" class="save-grades">💾 Salvează</button>
           <button @click="closeEditModal" class="cancel-button">❌ Închide</button>
         </div>
       </div>
@@ -81,7 +80,7 @@
             <td>{{ subject.name }}</td>
             <td>{{ subject.finalGrade.toFixed(2) }}</td>
             <td class="actions">
-              <button @click="updateSubjectGrades(subject)"> ✏️</button>
+              <button @click="setEditingSubject(subject)">✏️</button>
               <button @click="deleteSubjectGrade(subject.name)"> ❌</button>
             </td>
           </tr>
@@ -105,6 +104,7 @@ export default {
     const userId = computed(() => store.getters['user/userId']);
     const selectedSubject = ref('');
     const subjects = ref([]);
+    const isEditing = ref(false);
 
     const uniqueSubjects = async () => {
       if (!userId.value) return;
@@ -114,8 +114,8 @@ export default {
         subjects.value = [...new Set(Object.values(storeSchedule).flat().filter(Boolean))];
       }
       catch (error) {
-        if(error.status === 404)
-    toast.warning('Nu ai adăugat încă nicio materie în orar!');
+        if (error.status === 404)
+          toast.warning('Nu ai adăugat încă nicio materie în orar!');
       }
     }
 
@@ -130,7 +130,7 @@ export default {
         await store.dispatch('grades/loadGrades', userId.value);
       }
       catch (error) {
-        if(error.status===404){
+        if (error.status === 404) {
           toast.warning("Încă nu ai adăugat nicio notă!")
         }
       }
@@ -139,25 +139,36 @@ export default {
     const savedGrades = computed(() => store.getters['grades/savedGrades']);
 
     const openEditModal = () => {
-      savedGrades.value.forEach(grade => {
-        console.log(selectedSubject)
-        if (grade.name === selectedSubject.value) {
-          console.log(grade.name)
-          seminarComponents.value = grade.seminarComponents.map(component => ({ ...component }));
-          examWeight.value = grade.examWeight;
-          examGrade.value = grade.examGrade;
-        }
-        
-      });
+      const existingGrade = savedGrades.value.find(grade => grade.name === selectedSubject.value);
+      if (existingGrade) {
+        seminarComponents.value = existingGrade.seminarComponents.map(component => ({ ...component }));
+        examWeight.value = existingGrade.examWeight;
+        examGrade.value = existingGrade.examGrade;
+        isEditing.value = true;
+      } else {
+        seminarComponents.value = [{ name: '', weight: 0, grade: 0 }];
+        examWeight.value = 0;
+        examGrade.value = 0;
+        isEditing.value = false;
+      }
       isEditModalOpen.value = true;
     }
 
     const closeEditModal = () => {
-      seminarComponents.value=[{ name: '', weight: 0, grade: 0 }];
-      examGrade.value=0;
-      examWeight.value=0;
+      selectedSubject.value = '';
+      seminarComponents.value = [{ name: '', weight: 0, grade: 0 }];
+      examGrade.value = 0;
+      examWeight.value = 0;
       isEditModalOpen.value = false;
+      isEditing.value = false;
     }
+
+    const setEditingSubject = (subject) => {
+      selectedSubject.value = subject.name;
+      isEditing.value = true;
+      openEditModal();
+    };
+
 
     const addComponent = () => {
       seminarComponents.value.push({ name: '', weight: 0, grade: 0 });
@@ -178,6 +189,7 @@ export default {
     }
 
     const saveGrades = async () => {
+      isEditing.value = false;
       const finalGrade = calculateFinalGrade();
 
       const gradeData = {
@@ -197,31 +209,47 @@ export default {
         await loadGrades();
         closeEditModal();
       } catch (error) {
-        toast.error('Eroare la salvarea notelor');
+        const errors = error.response.data.errors;
+        for(const error of errors) {
+          toast.error(error.msg);
+        }
       }
     }
 
-    const updateSubjectGrades = async (subject) => {
-      selectedSubject.value = subject.name;
-      seminarComponents.value = subject.seminarComponents || [{ name: '', weight: 0, grade: 0 }];
-      examWeight.value = subject.examWeight || 0;
-      examGrade.value = subject.examGrade || 0;
-      openEditModal();
+    const updateSubjectGrades = async () => {
+      if (!selectedSubject.value) {
+        toast.error('Selectează o materie!');
+        return;
+      }
 
       try {
         const finalGrade = calculateFinalGrade();
         await store.dispatch('grades/updateSubjectGrades', {
           userId: userId.value,
           gradeData: {
-            name: subject.name,
+            name: selectedSubject.value,
             seminarComponents: seminarComponents.value,
             examWeight: examWeight.value,
             examGrade: examGrade.value,
             finalGrade
           }
         });
+        toast.success('Note actualizate cu succes!');
+        await loadGrades();
+        closeEditModal();
       } catch (error) {
-        toast.error('Eroare la actualizarea notelor');
+        const errors = error.response.data.errors;
+        for(const error of errors) {
+          toast.error(error.msg);
+        }
+      }
+    }
+
+    const handleSubmit = async () => {
+      if (isEditing.value) {
+        await updateSubjectGrades();
+      } else {
+        await saveGrades();
       }
     }
 
@@ -260,7 +288,10 @@ export default {
       removeComponent,
       saveGrades,
       updateSubjectGrades,
-      deleteSubjectGrade
+      deleteSubjectGrade,
+      handleSubmit,
+      setEditingSubject,
+      isEditing
     };
   }
 };
@@ -465,7 +496,8 @@ table td button {
     padding: 15px;
   }
 
-  table td, table th {
+  table td,
+  table th {
     padding: 8px 5px;
     font-size: 0.85rem;
   }

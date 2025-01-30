@@ -14,9 +14,9 @@ const generateFakeResourcesForAllUsers = async (count = 10) => {
     for (const userDoc of usersSnapshot.docs) {
       const userId = userDoc.id;
 
-      const scheduleDoc = await db.collection('schedules').doc(userId).get();
+      const scheduleDoc = await db.collection('users').doc(userId).collection('timetables').doc('timetable').get();
       if (!scheduleDoc.exists) {
-        console.log(`Orar necăutat pentru utilizatorul ${userId}`);
+        console.log(`Nu există un orar pt utilizatorul ${userId}`);
         continue;
       }
 

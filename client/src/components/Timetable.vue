@@ -17,14 +17,14 @@
           <label for="hourDuration">Durată oră</label>
           <div class="input-wrapper">
             <span class="input-icon">⏱️</span>
-            <input type="number" v-model="hourDuration" id="hourDuration" min="15" max="90" required />
+            <input type="number" v-model="hourDuration" id="hourDuration" min="0" max="90" required />
           </div>
         </div>
         <div class="input-container">
           <label for="breakDuration">Durată pauză</label>
           <div class="input-wrapper">
             <span class="input-icon">☕</span>
-            <input type="number" v-model="breakDuration" id="breakDuration" min="5" max="30" required />
+            <input type="number" v-model="breakDuration" id="breakDuration" min="0" max="30" required />
           </div>
         </div>
         <button type="submit" class="generate-btn">
@@ -65,7 +65,7 @@
 </template>
 
 <script>
-import { ref, reactive, onMounted, computed, watch } from 'vue';
+import { ref, reactive, onMounted, computed } from 'vue';
 import { useStore } from 'vuex';
 import { useToast } from 'vue-toastification';
 
@@ -116,7 +116,7 @@ export default {
       const totalSlots = 10;
 
       for (let i = 0; i < totalSlots; i++) {
-        const startTimeForSlot = startTime.value * 60 + i * (hourDuration.value + breakDuration.value);
+        const startTimeForSlot = startTime.value * 60 + i * hourDuration.value + i * breakDuration.value;
         newTimeSlots.push(formatTime(startTimeForSlot));
       }
 
@@ -143,7 +143,7 @@ export default {
           toast.error(error.msg);
         }
       }
-    };
+    }
 
     const loadSchedule = async () => {
       if (!userId.value) return;
@@ -180,10 +180,6 @@ export default {
         toast.error('A apărut o eroare la ștergerea materiei.' + error);
       }
     };
-
-    watch([startTime, hourDuration, breakDuration], () => {
-      updateSchedule();
-    });
 
     onMounted(async () => {
       if (userId.value) {
@@ -341,7 +337,7 @@ export default {
   opacity: 1;
 }
 
-.no-schedule{
+.no-schedule {
   font-size: 1.2em;
   font-weight: bold;
   color: #2c3e50;

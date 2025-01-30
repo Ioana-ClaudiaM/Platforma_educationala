@@ -30,11 +30,9 @@ const eventsModule = {
         state.events.push(event);
       },
       UPDATE_EVENT(state, { eventId, eventData }) {
-        if (state.resources) {
-            const index = state.allEvents.findIndex(e => e.id === eventId);
-            if (index !== -1) {
-                state.events[index] = { ...state.events[index], ...eventData };
-            }
+        const index = state.events.findIndex(e => e.id === eventId);
+        if (index !== -1) {
+            state.events[index] = { ...state.events[index], ...eventData };
         }
     },
       DELETE_EVENT(state, eventId) {
@@ -52,29 +50,35 @@ const eventsModule = {
       },
       async addEvent({ commit }, { event, userId }) {
         try {      
-          await axios.post('http://localhost:8000/addEvent', {
+          const response = await axios.post('http://localhost:8000/addEvent', {
             userId,
-            event: event
+            ...event
           });
-      
-          commit('ADD_EVENT', event);
+          commit('ADD_EVENT', response.data.event);
         } catch (error) {
           console.error('Eroare la adăugarea evenimentului:', error);
+          throw error;
         }
       },      
-      async updateEvent({ commit }, {userId,eventId,eventData}) {
-        console.log(eventData,userId,eventId);
+      async updateEvent({ commit }, {userId, eventId, eventData}) {
         try {
-          await axios.put('http://localhost:8000/updateEvent', {
-            userId,
-            eventId,
-            eventData
-          });
-          commit('UPDATE_EVENT', {eventId,eventData});
+            const response = await axios.put('http://localhost:8000/updateEvent', {
+                userId,
+                eventId,
+                ...eventData
+            });
+            if (response.data.event) {
+                commit('UPDATE_EVENT', {
+                    eventId,
+                    eventData: response.data.event
+                });
+            }
+            return response.data;
         } catch (error) {
-          console.error(error);
+            console.error('Eroare la actualizarea evenimentului:', error);
+            throw error;
         }
-      },
+    },
       async deleteEvent({ commit }, {eventId,userId}) {
         try {
           await axios.delete(`http://localhost:8000/deleteEvent/${eventId}/${userId}`);

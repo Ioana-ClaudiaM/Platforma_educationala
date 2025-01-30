@@ -68,7 +68,7 @@
 
 <script>
 import * as echarts from 'echarts';
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, onUnmounted } from 'vue';
 import { useStore } from 'vuex';
 export default {
     name: "DashboardComp",
@@ -84,9 +84,9 @@ export default {
         const allTasks = computed(() => store.getters['tasks/allTasks']);
 
         const pieChartRef = ref(null);
-    const barChartRef = ref(null);
-    let pieChart = null;
-    let barChart = null;
+        const barChartRef = ref(null);
+        let pieChart = null;
+        let barChart = null;
 
         const completedTasksCount = computed(() =>
             allTasks.value.filter(task => task.status === 'Completed').length
@@ -121,7 +121,7 @@ export default {
 
         const initializeCharts = () => {
             console.log('initializeCharts');
-            console.log("Ref"+pieChartRef.value);
+            console.log("Ref" + pieChartRef.value);
             if (pieChartRef.value) {
                 pieChart = echarts.init(pieChartRef.value);
                 updatePieChart();
@@ -192,18 +192,33 @@ export default {
         };
 
 
-        watch(props.selectedEventId, () => {
-            if (!props.selectedEventId.value) {
-                setTimeout(initializeCharts, 100);
+        watch(allTasks, () => {
+            if (pieChart && barChart) {
+                updatePieChart();
+                updateBarChart();
+            }
+        }, { deep: true });
+
+        watch(() => props.selectedEventId, () => {
+            if (!props.selectedEventId) {
+
+                initializeCharts();
+
             }
         });
-
         onMounted(async () => {
             await store.dispatch('events/fetchEvents', userId.value);
             await store.dispatch('tasks/fetchAllTasks', userId.value);
             initializeCharts();
-            console.log(events.value);
-            console.log(allTasks.value)
+        });
+
+        onUnmounted(() => {
+            if (pieChart) {
+                pieChart.dispose();
+            }
+            if (barChart) {
+                barChart.dispose();
+            }
         });
 
         return {
@@ -348,15 +363,15 @@ export default {
         margin-top: 0.5rem;
         gap: 0.5rem;
     }
-    
+
     .stats-grid {
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     }
-    
+
     .chart-card {
         min-height: 350px;
     }
-    
+
     .upcoming-events {
         width: 100%;
         padding: 0.5rem;
@@ -369,12 +384,12 @@ export default {
         text-align: center;
         padding: 0.75rem;
     }
-    
+
     .events-list {
         grid-template-columns: 1fr;
         padding: 0.5rem;
     }
-    
+
     .chart-container {
         min-height: 250px;
         width: 250px;

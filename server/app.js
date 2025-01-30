@@ -2,7 +2,6 @@ const express = require('express');
 require('dotenv').config();
 const morgan = require('morgan');
 const cors = require('cors');
-const { generateFakeResourcesForAllUsers } = require('./studyResourcesManagement/generateFakeResources'); 
 const PORT = process.env.PORT || 8000;
 
 const app = express();
@@ -30,19 +29,10 @@ app.get('/', (req, res) => {
   res.status(200).send("<h1>Hello!</h1>");
 });
 
-const initializeServer = async () => {
-  try {
-    await generateFakeResourcesForAllUsers(10); 
-    console.log('Fake resources generated for all users at server startup');
-  } catch (error) {
-    console.error('Error during server initialization:', error);
-  }
-};
 
 app.listen(PORT, async (error) => {
   if (!error) {
     console.log(`Server is successfully running and app is listening on port ${PORT}`);
-    await initializeServer(); 
   } else {
     console.log(`Error occurred, server can't start: ${error}`);
   }

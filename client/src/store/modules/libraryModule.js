@@ -58,7 +58,7 @@ const libraryModule = {
             try {
                 const response = await axios.post(
                     'http://localhost:8000/addResource',
-                    { userId, resource },
+                    { userId, ...resource },
                 );
                 commit('ADD_RESOURCE', response.data.resource);
             } catch (error) {
@@ -67,13 +67,9 @@ const libraryModule = {
             }
         },
 
-        async deleteResource({ commit }, { userId, resourceId }) {
+        async deleteResource({ commit }, { resourceId, userId}) {
             try {
-                console.log(resourceId)
-                await axios.post('http://localhost:8000/deleteResource', {
-                    userId,
-                    resourceId
-                });
+                await axios.delete(`http://localhost:8000/deleteResource/${userId}/${resourceId}`);
                 commit('DELETE_RESOURCE', resourceId);
             } catch (error) {
                 console.error('Eroare la ștergerea resursei:', error);
@@ -83,10 +79,10 @@ const libraryModule = {
 
         async updateResource({ commit }, { userId, resourceId, resourceData }) {
             try {
-              const response = await axios.post('http://localhost:8000/updateResource', {
+              const response = await axios.put('http://localhost:8000/updateResource', {
                 userId,
                 resourceId,
-                resourceData
+                ...resourceData
               });
                 commit('UPDATE_RESOURCE', { id: resourceId, updatedData: response.data });
             } catch (error) {
