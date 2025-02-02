@@ -14,12 +14,12 @@ const eventsValidationRules = () => {
             .notEmpty()
             .withMessage('Date is required')
             .custom((value) => {
-                const today = new Date().toISOString().split('T')[0]; 
+                const today = new Date().toISOString().split('T')[0];
                 if (value < today) {
-                  throw new Error('Data nu poate fi în trecut.');
+                    throw new Error('Data nu poate fi în trecut.');
                 }
                 return true;
-              }),
+            }),
         body('type')
             .notEmpty()
             .withMessage('Type is required'),
@@ -27,7 +27,8 @@ const eventsValidationRules = () => {
             .notEmpty()
             .withMessage('Description is required')
             .isLength({ min: 10, max: 200 })
+            .withMessage('Descrierea trebuie să fie între 10 și 100 de caractere')
     ];
 }
 
-module.exports = {eventsValidationRules};
+module.exports = { eventsValidationRules };

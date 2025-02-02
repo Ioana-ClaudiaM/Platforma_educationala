@@ -40,9 +40,9 @@ export default {
     const store = useStore();
 
     const educationalTasks = computed(() => {
-      const allTasks = store.getters['tasks/allTasks'];
+      const allTasks = computed(() => store.getters['tasks/allTasks']);
       const now = new Date();
-      return allTasks
+      return allTasks.value
       .filter(task => task && task.dueDate && new Date(task.dueDate) >= now)
       .sort((a, b) => new Date(a.dueDate)-new Date(b.dueDate));
     });
@@ -64,10 +64,10 @@ export default {
       return statusMap[status] || status;
     };
 
-    onMounted(() => {
+    onMounted(async() => {
       const userId = computed(() => store.getters['user/userId']);
       if (userId.value) {
-        store.dispatch('tasks/fetchAllTasks', userId.value);
+        await store.dispatch('tasks/fetchAllTasks', userId.value);
       }
     });
 
@@ -205,6 +205,7 @@ export default {
 @media (max-width: 640px) {
   .card-education {
     padding: 1rem;
+    width: 50%;
   }
 
   .task-header {

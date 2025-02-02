@@ -135,7 +135,6 @@ export default {
       );
     }
 
-
     const formattedMonthYear = computed(() => {
       return currentDate.value.toLocaleDateString('ro-RO', {
         month: 'long',
@@ -225,7 +224,7 @@ export default {
         if (error.response?.data?.errors) {
           error.response.data.errors.forEach(err => toast.error(err.msg));
         } else {
-          toast.error('A apărut o eroare la adăugarea evenimentului.');
+          toast.error(error.message);
         }
       }
     }

@@ -1,5 +1,6 @@
 <template>
   <div class="task-manager-container">
+
     <div class="header-section">
       <h2>📋 Task Manager</h2>
       <div class="event-selection-container">
@@ -15,6 +16,8 @@
         <button v-show="selectedEventId" class="add-task-btn" @click="showModal = true">➕ Adaugă Task Nou</button>
       </div>
     </div>
+
+    <Dashboard :selectedEventId="selectedEventId" />
 
     <div v-if="selectedEventId && eventTasks.length > 0" class="progress-section">
       <div class="progress-info">
@@ -32,8 +35,6 @@
         <p>Apasă pe butonul "Adaugă Task Nou" pentru a începe.</p>
       </div>
     </div>
-
-    <Dashboard :selectedEventId="selectedEventId" />
 
     <div v-if="selectedEventId" class="task-preview">
       <div class="task-grid">
@@ -95,7 +96,7 @@ export default {
 
     const userId = computed(() => store.getters['user/userId']);
     const events = computed(() => store.getters['events/allEvents']);
-    const eventTasks = computed(() => store.getters['tasks/eventTasks']) || [];
+    const eventTasks = computed(() => store.getters['tasks/eventTasks']);
 
     const initialTaskData = ref({
       title: '',
@@ -144,24 +145,20 @@ export default {
 
     const calculateProgress = () => {
       if (eventTasks.value.length === 0) return 0;
-      console.log(eventTasks.value.length)
       const completedTasks = eventTasks.value.filter(task => task.status === 'Completed').length;
       return Math.round((completedTasks / eventTasks.value.length) * 100);
-    };
-
-    const getStatusClass = (status) => {
-      const statusMap = {
-        'Pending': 'status-pending',
-        'In Progress': 'status-in-progress',
-        'Completed': 'status-completed'
-      };
-      return statusMap[status] || '';
     };
 
     const closeModal = () => {
       showModal.value = false;
       isEditing.value = false;
       editingTaskId.value = null;
+      initialTaskData.value = {
+        title: '',
+        description: '',
+        dueDate: '',
+        status: 'Pending',
+      };
     };
 
     async function loadEventTasks() {
@@ -190,9 +187,14 @@ export default {
         closeModal();
       }
       catch (error) {
-        const errors = error.response.data.errors;
-        for(const err of errors) {
-          toast.error(err.msg);
+        if (error.response) {
+          const errors = error.response.data.errors;
+          for (const err of errors) {
+            toast.error(err.msg);
+          }
+        }
+        else {
+          toast.error(error.message);
         }
       }
     }
@@ -214,31 +216,31 @@ export default {
         });
         toast.success('Task-ul a fost actualizat cu succes');
         closeModal();
-      }catch (error) {
+      } catch (error) {
         const errors = error.response.data.errors;
-        for(const err of errors) {
+        for (const err of errors) {
           toast.error(err.msg);
         }
       }
     };
 
     const handleStatusChange = async (task) => {
-  try {
-    await store.dispatch('tasks/updateTask', {
-      taskId: task.id,
-      userId: userId.value,
-      taskData: {
-        ...task,
-        status: task.status
-      },
-      eventId: selectedEventId.value,
-    });
-    toast.success('Status actualizat cu succes');
-  } catch (error) {
-    console.error('Error updating task status:', error);
-    toast.error('Nu s-a putut actualiza statusul');
-  }
-};
+      try {
+        await store.dispatch('tasks/updateTask', {
+          taskId: task.id,
+          userId: userId.value,
+          taskData: {
+            ...task,
+            status: task.status
+          },
+          eventId: selectedEventId.value,
+        });
+        toast.success('Status actualizat cu succes');
+      } catch (error) {
+        console.error('Error updating task status:', error);
+        toast.error('Nu s-a putut actualiza statusul');
+      }
+    };
 
     const handleSubmit = async (taskData) => {
       if (isEditing.value) {
@@ -283,7 +285,6 @@ export default {
       calculateProgress,
       addTask,
       loadEventTasks,
-      getStatusClass,
       closeModal,
       initialTaskData,
       modalFields,
@@ -302,11 +303,15 @@ export default {
 
 <style scoped>
 .task-manager-container {
-  padding: 2rem;
-  margin: 0 auto;
+  padding: 1rem;
   background-color: #fffefece;
   border-radius: 12px;
+  width: 100%;
+  margin: 0 auto;
   max-width: 1200px;
+}
+
+.task-preview {
   width: 100%;
 }
 
@@ -331,7 +336,6 @@ export default {
   font-size: 1rem;
   min-width: 250px;
   cursor: pointer;
-  transition: all 0.3s ease;
   font-family: "Sour Gummy";
   text-align: center;
 }
@@ -369,16 +373,11 @@ export default {
 .task-grid {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
-  max-height: 500px;
-  overflow-y: scroll;
-  width: 700px;
-  margin-left: 15%;
-  padding: 20px;
+  gap: 1.5rem;
   background-color: #e4e4e4;
-  padding: 50px;
+  border-radius: 8px;
+  overflow-y: auto;
 }
-
 
 .task-card {
   background: white;
@@ -392,22 +391,6 @@ export default {
   color: #5f71a3;
 }
 
-.task-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 100%;
-  height: 4px;
-  background: linear-gradient(to right, #7f73bf, #9f97c9);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.task-card:hover::before {
-  opacity: 1;
-}
-
 .task-actions {
   display: flex;
   gap: 0.5rem;
@@ -418,7 +401,6 @@ export default {
 .edit-icon {
   font-size: 1.2rem;
 }
-
 
 .task-meta {
   display: flex;
@@ -462,15 +444,14 @@ export default {
   z-index: 1000;
 }
 
+
 .modal-content {
-  background: white;
-  padding: 2rem;
-  border-radius: 12px;
-  width: 100%;
+  width: 90%;
   max-width: 500px;
-  max-height: 90vh;
-  overflow-y: auto;
+  margin: 1rem;
+  padding: 1.5rem;
 }
+
 
 .modal-large {
   max-width: 800px;
@@ -565,5 +546,125 @@ export default {
   color: #666;
 }
 
+@media (min-width: 1024px) {
+  .task-grid {
+    width: 700px;
+    margin-left: 15%;
+    padding: 50px;
+  }
 
+  .progress-section {
+    width: 50%;
+    margin-left: 22%;
+  }
+
+  .event-selection-container {
+    flex-direction: row;
+    gap: 1rem;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .task-grid {
+    width: 90%;
+    margin-left: 5%;
+    padding: 30px;
+  }
+
+  .progress-section {
+    width: 70%;
+    margin-left: 15%;
+  }
+
+  .event-selection-container {
+    flex-direction: row;
+    gap: 1rem;
+  }
+
+  .task-card {
+    padding: 1.25rem;
+  }
+
+  .task-preview {
+    width: 90%;
+  }
+}
+
+@media (max-width: 767px) {
+  .task-manager-container {
+    padding: 0.5rem;
+  }
+
+  .task-grid {
+    width: 100%;
+    margin-left: 0;
+    padding: 15px;
+    max-height: 400px;
+  }
+
+  .progress-section {
+    width: 90%;
+    margin: 2rem auto;
+  }
+
+  .event-selection-container {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .event-select {
+    width: 100%;
+    min-width: unset;
+  }
+
+  .task-card {
+    padding: 1rem;
+  }
+
+  .task-actions {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .task-meta {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+
+  .task-dates {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .task-preview {
+    width: 85%;
+    margin-left: 25px;
+  }
+}
+
+@media (max-width: 480px) {
+  .task-manager-container {
+    padding: 0.25rem;
+  }
+
+  .task-card {
+    padding: 0.75rem;
+  }
+
+  .task-actions button,
+  .status-select {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  .modal-content {
+    padding: 1rem;
+  }
+
+  .progress-section {
+    width: 95%;
+    margin: 1rem auto;
+  }
+}
 </style>

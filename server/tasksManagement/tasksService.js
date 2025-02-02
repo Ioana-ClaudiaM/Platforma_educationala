@@ -152,35 +152,50 @@ const deleteTask = async (req, res) => {
 };
 
 const loadAllTasks = async (req, res) => {
-    const { userId, eventId } = req.params;
+    const { userId } = req.params;
 
-    if (!userId || !eventId) {
-        return res.status(400).send({ error: 'userId sau eventId lipsesc.' });
+    if (!userId) {
+        return res.status(400).send({ error: 'userId lipsește.' });
     }
 
     try {
-        const tasksRef = db.collection('users')
+        const eventsSnapshot = await db.collection('users')
             .doc(userId)
             .collection('events')
-            .doc(eventId)
-            .collection('tasks');
+            .get();
 
-        const tasksSnapshot = await tasksRef.get();
-
-        if (tasksSnapshot.empty) {
+        if (eventsSnapshot.empty) {
             return res.status(200).send({ 
                 tasks: [],
-                message: 'Nu există taskuri pentru acest eveniment.' 
+                message: 'Nu există evenimente pentru acest utilizator.' 
             });
         }
 
-        const tasks = tasksSnapshot.docs.map(doc => ({
-            id: doc.id,
-            eventId,
-            ...doc.data()
-        }));
+        const allTasks = [];
+        
+        for (const eventDoc of eventsSnapshot.docs) {
+            const eventId = eventDoc.id;
+            const tasksSnapshot = await db.collection('users')
+                .doc(userId)
+                .collection('events')
+                .doc(eventId)
+                .collection('tasks')
+                .get();
 
-        return res.status(200).send({ tasks });
+            const eventTasks = tasksSnapshot.docs.map(taskDoc => ({
+                id: taskDoc.id,
+                eventId,
+                eventName: eventDoc.data().name,
+                ...taskDoc.data()
+            }));
+
+            allTasks.push(...eventTasks);
+        }
+
+        return res.status(200).send({ 
+            tasks: allTasks,
+            totalTasks: allTasks.length
+        });
 
     } catch (error) {
         console.error('Eroare la încărcarea task-urilor:', error);

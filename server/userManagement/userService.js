@@ -58,7 +58,7 @@ const generateToken = (user) => {
       const isPasswordValid = await bcrypt.compare(password, user.password);
 
       if (!isPasswordValid) {
-        return res.status(401).json({ message: 'Parolă incorectă' });
+        return res.status(401).send({ message: 'Parolă incorectă' });
       }
   
       const token = generateToken(user);

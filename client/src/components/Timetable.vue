@@ -46,7 +46,8 @@
             <td class="time-cell">{{ time }}</td>
             <td v-for="(day, index) in days" :key="index" class="subject-cell">
               <div class="subject-input-wrapper">
-                <input v-model="schedule[day][idx]" class="subject-input" @blur="validateSubject(day, idx)" />
+                <input v-model="schedule[day][idx]" class="subject-input" :disabled="!timeSlots[idx]"
+                  @blur="validateSubject(day, idx)" />
                 <button v-if="schedule[day][idx]" @click="() => removeSubject(day, idx)" class="remove-subject"
                   title="Șterge disciplină">
                   ✕
@@ -117,7 +118,10 @@ export default {
 
       for (let i = 0; i < totalSlots; i++) {
         const startTimeForSlot = startTime.value * 60 + i * hourDuration.value + i * breakDuration.value;
-        newTimeSlots.push(formatTime(startTimeForSlot));
+        if (startTimeForSlot > 1440)
+          newTimeSlots.push('');
+        else
+          newTimeSlots.push(formatTime(startTimeForSlot));
       }
 
       timeSlots.value = newTimeSlots;

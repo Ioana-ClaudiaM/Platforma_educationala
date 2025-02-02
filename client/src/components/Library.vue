@@ -177,7 +177,6 @@ export default {
       }
     }
 
-
     function getResourceTypeIcon(type) {
       return resourceTypes.value[type] || '📁'
     }
@@ -217,6 +216,7 @@ export default {
     }
 
     async function saveResource(resourceData) {
+      console.log(resources.value)
       try {
         await store.dispatch('library/addResource', {
           userId: userId.value,
@@ -226,12 +226,18 @@ export default {
           }
         });
         toast.success('Resursa a fost adăugată cu succes!');
+        await loadResources();
         closeModal();
       } catch (error) {
+        if(error.response) {
         const errors = error.response.data.errors;
         for (const error of errors) {
           toast.error(error.msg);
         }
+      }
+      else{
+        toast.error(error.message);
+      }
       }
     }
 
@@ -243,8 +249,8 @@ export default {
           resourceData: resourceData,
         });
         toast.success('Resursa a fost actualizată cu succes!');
+        await loadResources();
         closeModal();
-        loadResources()
       } catch (error) {
         const errors = error.response.data.errors;
         for (const error of errors) {
@@ -256,7 +262,7 @@ export default {
     async function handleSubmit(resourceData) {
       if (isEditing.value) {
         await updateExistingResource(resourceData);
-      } else {
+      } else {  
         await saveResource(resourceData);
       }
     }

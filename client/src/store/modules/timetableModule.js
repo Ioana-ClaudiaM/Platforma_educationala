@@ -61,7 +61,6 @@ const timetableModule = {
         },
 
         async deleteSubject({ commit }, { userId, day, index }) {
-            console.log(userId,day,index)
             try {
                 await axios.delete(`http://localhost:8000/deleteSubject/${userId}/${day}/${index}`);
                 commit('DELETE_SUBJECT', { day, index });

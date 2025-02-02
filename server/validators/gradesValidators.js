@@ -18,6 +18,12 @@ const gradesValidationRules = () => [
                     if (component.grade === 0) {
                         throw new Error('Nota componentei este necesară');
                     }
+                    if( component.grade > 10 || component.grade<1){
+                        throw new Error('Nota trebuie să fie între 1 și 10');
+                    }
+                    if(component.weight > 100 || component.weight < 0){
+                        throw new Error('Ponderea trebuie sa fie intre 0 si 100');
+                    }
                 }
                 return true;
             } else {
@@ -49,8 +55,8 @@ const gradesValidationRules = () => [
     body('examGrade')
     .notEmpty()
     .withMessage('Nota examenului este necesară')
-    .isFloat({min: 0, max: 10})
-    .withMessage('Nota examenului trebuie să fie un număr între 0 și 10')
+    .isFloat({min: 1, max: 10})
+    .withMessage('Nota examenului trebuie să fie un număr între 1 și 10')
 ];
 
 module.exports = { gradesValidationRules };

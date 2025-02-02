@@ -99,8 +99,13 @@ export default {
           router.push('/profile');
         } catch (error) {
           const errors = error.response.data.errors;
+          if(errors) {
           for(let err of errors){
             toast.error(err.msg);
+          }
+        }
+          else{
+            toast.error(error.response.data.message);
           }
         } finally {
           isSubmitting.value = false;

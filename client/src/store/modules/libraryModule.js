@@ -4,7 +4,7 @@ const libraryModule = {
     namespaced: true,
 
     state: () => ({
-        resources: null,
+        resources: [],
         resourceTypes: {
             'Notă': '📝',
             'Carte': '📖',
@@ -25,10 +25,14 @@ const libraryModule = {
             state.selectedCategory = category;
         },
         ADD_RESOURCE(state, resource) {
-            if (!state.resources) {
-                state.resources = [];
+            const index = state.resources.findIndex(r => r.title === resource.title && r.category === resource.category && r.type === resource.type
+            && r.description === resource.description); 
+            if (index === -1) {
+                state.resources.push(resource);
             }
-            state.resources.push(resource);
+            else{
+                throw new Error('Resursa există deja');
+            }
         },
         DELETE_RESOURCE(state, resourceId) {
             if (state.resources) {

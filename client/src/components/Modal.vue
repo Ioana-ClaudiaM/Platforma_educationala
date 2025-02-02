@@ -58,8 +58,6 @@
           </template>
         </div>
 
-        <slot></slot>
-
         <div class="modal-actions">
           <button type="button" class="cancel-btn" @click="handleClose">
             Anulează
@@ -89,20 +87,10 @@ export default {
     },
   },
 
-  emits: ['update:modelValue', 'submit', 'close'],
+  emits: ['submit', 'close'],
 
   setup(props, { emit }) {
     const formData = ref({ ...props.initialData })
-
-    watch(() => props.initialData, (newVal) => {
-      formData.value = { ...newVal }
-    }, { deep: true })
-
-    watch(() => props.isOpen, (isOpen) => {
-      if (isOpen) {
-        formData.value = { ...props.initialData }
-      }
-    })
 
     const handleSubmit = () => {
       emit('submit', { ...formData.value })
@@ -123,6 +111,16 @@ export default {
       formData.value[fieldId].splice(index, 1)
     }
 
+    watch(() => props.initialData, (newVal) => {
+      formData.value = { ...newVal }
+    }, { deep: true })
+
+    watch(() => props.isOpen, (isOpen) => {
+      if (isOpen) {
+        formData.value = { ...props.initialData }
+      }
+    })
+    
     return {
       formData,
       handleSubmit,
@@ -219,7 +217,7 @@ export default {
   border-radius: 6px;
   cursor: pointer;
   margin-top: 10px;
-  position: fixed;
+  position:relative;
 }
 
 .add-btn:hover {

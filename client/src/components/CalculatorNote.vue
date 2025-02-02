@@ -59,7 +59,7 @@
         </div>
 
         <div class="modal-actions">
-          <button @click="handleSubmit(subject)" class="save-grades">💾 Salvează</button>
+          <button @click="handleSubmit()" class="save-grades">💾 Salvează</button>
           <button @click="closeEditModal" class="cancel-button">❌ Închide</button>
         </div>
       </div>
@@ -190,14 +190,14 @@ export default {
 
     const saveGrades = async () => {
       isEditing.value = false;
-      const finalGrade = calculateFinalGrade();
+      const finalGrade = calculateFinalGrade() || 0;
 
       const gradeData = {
         name: selectedSubject.value,
         seminarComponents: seminarComponents.value,
         examWeight: examWeight.value,
         examGrade: examGrade.value,
-        finalGrade
+        finalGrade: finalGrade || 0 
       };
 
       try {

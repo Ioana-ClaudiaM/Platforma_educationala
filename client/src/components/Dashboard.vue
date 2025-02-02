@@ -77,7 +77,7 @@ export default {
         selectedEventId: String,
     },
 
-    setup(props) {
+    setup() {
         const store = useStore();
         const userId = computed(() => store.getters['user/userId']);
         const events = computed(() => store.getters['events/allEvents']);
@@ -106,6 +106,7 @@ export default {
             return events.value
                 .filter(event => new Date(event.date) >= today)
                 .sort((a, b) => new Date(a.date) - new Date(b.date))
+                .slice(0,6)
         });
 
 
@@ -118,27 +119,12 @@ export default {
 
         const formatDate = (date) => new Date(date).toLocaleDateString('ro-RO');
 
-
-        const initializeCharts = () => {
-            console.log('initializeCharts');
-            console.log("Ref" + pieChartRef.value);
-            if (pieChartRef.value) {
-                pieChart = echarts.init(pieChartRef.value);
-                updatePieChart();
-            }
-
-            if (barChartRef.value) {
-                barChart = echarts.init(barChartRef.value);
-                updateBarChart();
-            }
-        };
-
         const updatePieChart = () => {
             const option = {
                 tooltip: { trigger: 'item' },
                 legend: {
                     orient: 'vertical',
-                    left: 'left'
+                    left: 'left',
                 },
                 series: [{
                     type: 'pie',
@@ -147,21 +133,21 @@ export default {
                         { value: completedTasksCount.value, name: 'Finalizate', itemStyle: { color: '#7f73bf' } },
                         { value: inProgressTasksCount.value, name: 'În Desfășurare', itemStyle: { color: '#9f97c9' } },
                         {
-                            value: allTasks.value.length - completedTasksCount.value - inProgressTasksCount.value,
-                            name: 'În Așteptare',
-                            itemStyle: { color: '#bfb8d9' }
+                            value: allTasks.value.length - completedTasksCount.value - inProgressTasksCount.value, name: 'În Așteptare', itemStyle: { color: '#bfb8d9' }
                         }
                     ],
-                    emphasis: {
-                        itemStyle: {
-                            shadowBlur: 10,
-                            shadowOffsetX: 0,
-                            shadowColor: 'rgba(0, 0, 0, 0.5)'
-                        }
-                    }
                 }]
             };
             pieChart?.setOption(option);
+        };
+
+        const getMonthlyEventDistribution = () => {
+            const monthCounts = {};
+            events.value.forEach(event => {
+                const month = new Date(event.date).toLocaleDateString('ro-RO', { month: 'short' });
+                monthCounts[month] = (monthCounts[month] || 0) + 1;
+            });
+            return Object.entries(monthCounts).map(([month, count]) => ({ month, count }));
         };
 
         const updateBarChart = () => {
@@ -182,15 +168,18 @@ export default {
             barChart?.setOption(option);
         };
 
-        const getMonthlyEventDistribution = () => {
-            const monthCounts = {};
-            events.value.forEach(event => {
-                const month = new Date(event.date).toLocaleDateString('ro-RO', { month: 'short' });
-                monthCounts[month] = (monthCounts[month] || 0) + 1;
-            });
-            return Object.entries(monthCounts).map(([month, count]) => ({ month, count }));
-        };
 
+        const initializeCharts = () => {
+            if (pieChartRef.value) {
+                pieChart = echarts.init(pieChartRef.value);
+                updatePieChart();
+            }
+
+            if (barChartRef.value) {
+                barChart = echarts.init(barChartRef.value);
+                updateBarChart();
+            }
+        };
 
         watch(allTasks, () => {
             if (pieChart && barChart) {
@@ -199,13 +188,6 @@ export default {
             }
         }, { deep: true });
 
-        watch(() => props.selectedEventId, () => {
-            if (!props.selectedEventId) {
-
-                initializeCharts();
-
-            }
-        });
         onMounted(async () => {
             await store.dispatch('events/fetchEvents', userId.value);
             await store.dispatch('tasks/fetchAllTasks', userId.value);
@@ -266,17 +248,17 @@ export default {
 }
 
 .stat-icon {
-    font-size: clamp(1.5rem, 2vw, 2rem);
+    font-size: 1.5rem;
 }
 
 .stat-content h3 {
-    font-size: clamp(0.875rem, 1.5vw, 1rem);
+    font-size: 0.8rem;
     color: #525151;
     margin: 0;
 }
 
 .stat-value {
-    font-size: clamp(1.5rem, 2vw, 1.8rem);
+    font-size: 1.5rem;
     font-weight: bold;
     color: #7f73bf;
     margin: 0.5rem 0 0 0;
@@ -305,7 +287,7 @@ export default {
 .chart-card h3 {
     margin: 0 0 1rem 0;
     color: #3b9eba;
-    font-size: clamp(1rem, 1.5vw, 1.25rem);
+    font-size: 1rem;
 }
 
 .chart-container {
@@ -339,7 +321,7 @@ export default {
     padding: 1rem;
     border: 1px solid #eee;
     border-radius: 8px;
-    font-size: clamp(0.75rem, 1.5vw, 0.8rem);
+    font-size: 0.7rem;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
@@ -355,7 +337,7 @@ export default {
 .event-details h4 {
     margin: 0 0 0.5rem 0;
     color: #333;
-    font-size: clamp(0.875rem, 1.5vw, 1rem);
+    font-size: 0.8rem;
 }
 
 @media screen and (max-width: 768px) {

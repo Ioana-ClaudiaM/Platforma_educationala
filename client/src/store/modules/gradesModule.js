@@ -10,9 +10,15 @@ const gradesModule = {
             state.savedGrades = subjects;
         },
         ADD_SUBJECT_GRADE(state, subject) {
-            state.savedGrades.push(subject);
+            const existingIndex = state.savedGrades.findIndex(
+                s => s.name === subject.name
+            );
+
+            if (existingIndex === -1) {
+                state.savedGrades.push(subject);
+            }
         },
-        UPDATE_SUBJECT_GRADE(state, { subject }) {
+        UPDATE_SUBJECT_GRADE(state,  subject) {
             const existingIndex = state.savedGrades.findIndex(
                 s => s.name === subject.name
             );
@@ -46,18 +52,18 @@ const gradesModule = {
                     userId,
                     ...gradeData
                 });
-                commit('UPDATE_SUBJECT_GRADE', { subject: gradeData });
+                commit('ADD_SUBJECT_GRADE', gradeData);
                 return response.data;
             } catch (error) {
                 console.error('Error saving subject grades:', error);
                 throw error;
             }
         },
-        
+
         async deleteSubjectGrade({ commit }, { userId, subjectName }) {
             try {
                 await axios.delete(`http://localhost:8000/deleteSubjectGrade/${userId}/${subjectName}`);
-               
+
                 commit('DELETE_SUBJECT_GRADE', subjectName);
             } catch (error) {
                 console.error('Error deleting subject grade:', error);
@@ -66,18 +72,18 @@ const gradesModule = {
         },
         async updateSubjectGrades({ commit }, { userId, gradeData }) {
             try {
-              const response = await axios.put('http://localhost:8000/updateSubjectGrades', {
-                userId,
-                ...gradeData
-              });
-              
-              commit('UPDATE_SUBJECT_GRADE', { subject: gradeData });
-              return response.data;
+                const response = await axios.put('http://localhost:8000/updateSubjectGrades', {
+                    userId,
+                    ...gradeData
+                });
+
+                commit('UPDATE_SUBJECT_GRADE', gradeData);
+                return response.data;
             } catch (error) {
-              console.error('Error updating subject grades:', error);
-              throw error;
+                console.error('Error updating subject grades:', error);
+                throw error;
             }
-          },
+        },
     },
     getters: {
         savedGrades: state => state.savedGrades,
